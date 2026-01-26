@@ -2,8 +2,8 @@ from typing import Annotated, Any
 
 import msgspec.json
 
-from sghooker.entrypoints.web.app import SGHooker
-from sghooker.entrypoints.web.params import Body
+from sghooker.app import SGHooker
+from sghooker.params import Body
 
 app = SGHooker()
 

@@ -3,9 +3,9 @@ from http import HTTPMethod, HTTPStatus
 
 import msgspec
 
-from sghooker.entrypoints.web.responses import Response
-from sghooker.entrypoints.web.routing import Router
-from sghooker.entrypoints.web.rsgi import HTTPProtocol, Scope
+from sghooker.responses import Response
+from sghooker.routing import Router
+from sghooker.rsgi import HTTPProtocol, Scope
 
 
 class Application(Router):

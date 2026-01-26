@@ -5,7 +5,7 @@ from typing import Any, Callable, Protocol, TypeVar, get_args, get_type_hints
 import msgspec
 from urlpattern import URLPattern
 
-from sghooker.entrypoints.web.params import Body
+from sghooker.params import Body
 
 T = TypeVar("T", bound=Callable[..., Any])
 
