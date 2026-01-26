@@ -1,17 +1,22 @@
+from typing import Any, AsyncGenerator
+
 import httpx
 import pytest
+from httpx import AsyncClient
+
+from sghooker.main import app
 
 
-def test_client():
-    transport = httpx.ASGITransport(app=app)
-
+@pytest.fixture
+async def client() -> AsyncGenerator[AsyncClient, Any]:
+    transport = httpx.ASGITransport(app=app)  # type: ignore[arg-type]
     async with httpx.AsyncClient(
         transport=transport, base_url="http://testserver"
     ) as client:
-        r = await client.get("/")
-        assert r.status_code == 200
-        assert r.text == "Hello World!"
+        yield client
 
 
-def test_example() -> None:
-    assert True is True
+async def test_example(client: AsyncClient) -> None:
+    r = await client.get("/")
+    assert r.status_code == 200
+    assert r.text == '{"Hello":"World"}'

@@ -1,29 +1,84 @@
+from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from http import HTTPMethod, HTTPStatus
+from typing import Any
 
 import msgspec
+from asgiref.typing import (
+    ASGIReceiveCallable,
+    ASGISendCallable,
+    HTTPResponseBodyEvent,
+    HTTPResponseStartEvent,
+    HTTPScope,
+)
+from asgiref.typing import (
+    Scope as ASGIScope,
+)
 
 from sghooker.responses import Response
 from sghooker.routing import Router
 from sghooker.rsgi import HTTPProtocol, Scope
 
 
-class Application(Router):
-    async def __rsgi__(self, scope: Scope, protocol: HTTPProtocol) -> None:
-        assert scope.proto == "http"
+class HttpRequest(ABC):
+    method: HTTPMethod
+    path: str
 
-        match = self.match_route(HTTPMethod(scope.method), scope.path)
+    @abstractmethod
+    async def get_content(self) -> bytes:
+        """Read all request body."""
+        pass
+
+
+class RSGIHttpRequest(HttpRequest):
+    __slots__ = ("_scope", "_protocol")
+
+    def __init__(self, scope: Scope, protocol: HTTPProtocol) -> None:
+        self._scope = scope
+        self._protocol = protocol
+
+        self.method = HTTPMethod(scope.method)
+        self.path = scope.path
+
+    async def get_content(self) -> bytes:
+        return await self._protocol()
+
+
+class ASGIHttpRequest(HttpRequest):
+    __slots__ = ("_scope", "_receive")
+
+    def __init__(self, scope: HTTPScope, receive: ASGIReceiveCallable) -> None:
+        self._scope = scope
+        self._receive = receive
+
+        self.method = HTTPMethod(scope["method"])
+        self.path = scope["path"]
+
+    async def get_content(self) -> bytes:
+        body = b""
+        more_body = True
+        while more_body:
+            message = await self._receive()
+            if message["type"] == "http.request":
+                body += message.get("body", b"")
+                more_body = message.get("more_body", False)
+            else:
+                raise RuntimeError(f"Unsupported ASGI message type {message['type']}")
+        return body
+
+
+class Application(Router):
+    async def handle_http_request(self, request: HttpRequest) -> Any:
+        match = self.match_route(request.method, request.path)
 
         if match is None:
-            protocol.response_bytes(
+            return Response(
                 status=HTTPStatus.NOT_FOUND,
                 headers=[],
-                body=msgspec.json.encode({"error": "Not found."}),
+                content=msgspec.json.encode({"error": "Not found."}),
             )
-            return
 
         route, match_dict = match
-
         validated_path_params = msgspec.convert(
             match_dict, type=route.path_params_schema, strict=False
         )
@@ -31,19 +86,69 @@ class Application(Router):
         handler_params = msgspec.structs.asdict(validated_path_params)
 
         if route.body_arg_name and route.body_arg_schema:
-            body_content = await protocol()
+            body_content = await request.get_content()
             if not body_content:
-                protocol.response_bytes(
+                return Response(
                     status=HTTPStatus.BAD_REQUEST,
+                    content=msgspec.json.encode({"error": "Body is required."}),
                     headers=[],
-                    body=msgspec.json.encode({"error": "Body is required."}),
                 )
-                return
             handler_params[route.body_arg_name] = msgspec.json.decode(
                 body_content, type=route.body_arg_schema
             )
 
-        response = await route.handler(**handler_params)
+        return await route.handler(**handler_params)
+
+    async def __call__(
+        self, scope: ASGIScope, receive: ASGIReceiveCallable, send: ASGISendCallable
+    ) -> None:
+        assert scope["type"] == "http", "WS is not supported yet"
+
+        response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
+
+        if isinstance(response, Response):
+            await send(
+                HTTPResponseStartEvent(
+                    type="http.response.start",
+                    status=response.status,
+                    headers=[
+                        (b"content-type", b"text/plain"),
+                    ],
+                    trailers=False,
+                )
+            )
+            await send(
+                HTTPResponseBodyEvent(
+                    type="http.response.body", body=response.content, more_body=False
+                )
+            )
+        elif isinstance(response, msgspec.Struct) or isinstance(
+            response, (dict, list, str, int)
+        ):
+            await send(
+                HTTPResponseStartEvent(
+                    type="http.response.start",
+                    status=HTTPStatus.OK,  # FIXME: get default status
+                    headers=[
+                        (b"content-type", b"text/plain"),
+                    ],
+                    trailers=False,
+                )
+            )
+            await send(
+                HTTPResponseBodyEvent(
+                    type="http.response.body",
+                    body=msgspec.json.encode(response),
+                    more_body=False,
+                )
+            )
+        else:
+            raise RuntimeError(f"Unsupported response type {type(response)}")
+
+    async def __rsgi__(self, scope: Scope, protocol: HTTPProtocol) -> None:
+        assert scope.proto == "http", "WS is not supported yet"
+
+        response = await self.handle_http_request(RSGIHttpRequest(scope, protocol))
 
         if isinstance(response, Response):
             protocol.response_bytes(

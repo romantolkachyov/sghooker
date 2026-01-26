@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "asgiref>=3.11.0",
+    "dependency-injector>=4.48.3",
     "granian>=2.6.1",
     "httpx>=0.28.1",
     "msgspec>=0.20.0",
@@ -16,6 +18,7 @@ dependencies = [
 dev = [
     "mypy>=1.19.1",
     "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
     "ruff>=0.14.14",
 ]
 
@@ -29,3 +32,6 @@ host = "http://localhost:8000"
 users = 1000
 spawn-rate = 20
 run-time = "1m"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
