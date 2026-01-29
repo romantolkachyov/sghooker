@@ -9,6 +9,8 @@ from card_framework.v2.card import CardWithId
 from card_framework.v2.widgets import (
     Button,
     ButtonList,
+    Chip,
+    ChipList,
     DecoratedText,
     OnClick,
     OpenLink,
@@ -42,12 +44,36 @@ def _format_stack(stack_info: StacktraceInfo) -> list[DecoratedText]:
     return data
 
 
-def _exception_to_widget(exception: ExceptionData) -> list[Widget]:
+def _exception_to_widgets(exception: ExceptionData) -> list[Widget]:
     return [
         TextParagraph(
             text=f"<b>{exception.type}</b><br>{exception.value}",
         ),
         *_format_stack(exception.stacktrace),
+    ]
+
+
+def _issue_buttons() -> list[Button]:
+    return [
+        Button(
+            text="Open",
+            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
+        ),
+        Button(
+            text="Dashboard",
+            type_=Button.Type.BORDERLESS,
+            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
+        ),
+        Button(
+            text="Logs",
+            type_=Button.Type.BORDERLESS,
+            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
+        ),
+        Button(
+            text="Jump to trace",
+            type_=Button.Type.BORDERLESS,
+            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
+        ),
     ]
 
 
@@ -72,7 +98,7 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
                     Section(
                         collapsible=True,
                         uncollapsible_widgets_count=1,
-                        widgets=_exception_to_widget(e),
+                        widgets=_exception_to_widgets(e),
                     )
                     for e in event.exception.values
                 ]
@@ -81,32 +107,16 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
             ),
             Section(
                 widgets=[
-                    ButtonList(
-                        buttons=[
-                            Button(
-                                text="View in Sentry",
-                                on_click=OnClick(
-                                    open_link=OpenLink(url="https://sentry.io")
-                                ),
-                            ),
-                            Button(
-                                text="Service overview",
-                                type_=Button.Type.BORDERLESS,
-                                on_click=OnClick(
-                                    open_link=OpenLink(url="https://sentry.io")
-                                ),
-                            ),
-                            Button(
-                                text="Explore logs",
-                                type_=Button.Type.BORDERLESS,
-                                on_click=OnClick(
-                                    open_link=OpenLink(url="https://sentry.io")
-                                ),
-                            ),
-                        ]
+                    ChipList(
+                        layout=ChipList.Layout.HORIZONTAL_SCROLLABLE,
+                        chips=[
+                            Chip(label=f"{tag[0]} | {tag[1]}", disabled=True)
+                            for tag in event.tags
+                        ],
                     )
                 ]
             ),
+            Section(widgets=[ButtonList(buttons=_issue_buttons())]),
         ],
     )
     return Message(cards_v2=[card])
@@ -137,18 +147,7 @@ def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
                     )
                 ]
             ),
-            Section(
-                widgets=[
-                    ButtonList(
-                        buttons=[
-                            Button(
-                                text="View in Sentry",
-                                on_click=OnClick(open_link=OpenLink(url=issue.web_url)),
-                            )
-                        ]
-                    )
-                ]
-            ),
+            Section(widgets=[ButtonList(buttons=_issue_buttons())]),
         ],
     )
     return Message(cards_v2=[card])
