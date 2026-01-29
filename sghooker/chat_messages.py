@@ -21,8 +21,8 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
     card = CardWithId(
         header=CardHeader(
             title="CardHeaderTitle",
-            image_url="https://romantolkachyov.github.io/sentry.png",
             subtitle="CardHeaderSubtitle",
+            image_url="https://romantolkachyov.github.io/sentry.png",
             image_type=ImageType.CIRCLE,
         ),
         sections=[
@@ -75,22 +75,37 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
 
 
 def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
+    issue = webhook.data.issue
     card = CardWithId(
         header=CardHeader(
-            title=f"New Sentry issue in {webhook.data.issue.project.name}",
-            subtitle=webhook.data.issue.culprit,
+            title="New Sentry issue",
+            subtitle=f"Project: {issue.project.name}",
+            image_url="https://romantolkachyov.github.io/sentry.png",
+            image_type=ImageType.CIRCLE,
         ),
         sections=[
-            Section(widgets=[TextParagraph(text=webhook.data.issue.title)]),
+            Section(widgets=[TextParagraph(text=f"<b>culprit:</b> {issue.culprit}")]),
+            Section(widgets=[TextParagraph(text=issue.title, max_lines=4)]),
+            Section(
+                widgets=[
+                    TextParagraph(
+                        text="&nbsp;&nbsp;".join(
+                            [
+                                f"Priority: <b>{issue.priority}</b>",
+                                f"Count: <b>{issue.count}</b>",
+                                f"Users: <b>{issue.user_count}</b>",
+                            ]
+                        )
+                    )
+                ]
+            ),
             Section(
                 widgets=[
                     ButtonList(
                         buttons=[
                             Button(
                                 text="View in Sentry",
-                                on_click=OnClick(
-                                    open_link=OpenLink(url=webhook.data.issue.web_url)
-                                ),
+                                on_click=OnClick(open_link=OpenLink(url=issue.web_url)),
                             )
                         ]
                     )
