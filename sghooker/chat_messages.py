@@ -14,6 +14,7 @@ from card_framework.v2.widgets import (
 )
 
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
+from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
 
 def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
@@ -64,6 +65,33 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
                                     open_link=OpenLink(url="https://sentry.io")
                                 ),
                             ),
+                        ]
+                    )
+                ]
+            ),
+        ],
+    )
+    return Message(cards_v2=[card])
+
+
+def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
+    card = CardWithId(
+        header=CardHeader(
+            title=f"New Sentry issue in {webhook.data.issue.project.name}",
+            subtitle=webhook.data.issue.culprit,
+        ),
+        sections=[
+            Section(widgets=[TextParagraph(text=webhook.data.issue.title)]),
+            Section(
+                widgets=[
+                    ButtonList(
+                        buttons=[
+                            Button(
+                                text="View in Sentry",
+                                on_click=OnClick(
+                                    open_link=OpenLink(url=webhook.data.issue.web_url)
+                                ),
+                            )
                         ]
                     )
                 ]

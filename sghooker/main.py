@@ -5,6 +5,7 @@ import msgspec.json
 from pulya.params import Body
 from sghooker.app import SGHooker
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
+from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
 app = SGHooker()
 
@@ -30,7 +31,8 @@ async def index() -> dict[str, str]:
 
 @app.post("/inbox/sentry/{project}")
 async def receive_webhook(
-    project: str, body: Annotated[IssueAlertWebhookBody, Body()]
+    project: str,
+    body: Annotated[IssueAlertWebhookBody | IssueCreatedWebhookBody, Body()],
 ) -> dict[str, bool]:
     return {"success": True}
 
