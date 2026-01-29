@@ -10,6 +10,7 @@ dependencies = [
     "granian>=2.6.1",
     "httpx>=0.28.1",
     "msgspec>=0.20.0",
+    "python-matchit>=0.1.1",
     "urlpattern>=0.1.7",
     "uvloop>=0.22.1",
 ]

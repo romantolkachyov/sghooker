@@ -303,6 +303,29 @@ wheels = [
 ]
 
 [[package]]
+name = "python-matchit"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/1e/12615e853334f6b7f67081b567924c34bbde74f3ea9e3af090f90782a93b/python_matchit-0.1.1.tar.gz", hash = "sha256:78a5ad2d50845764e531ddbe3e779c9ce911510813484c5d9c2ea9eb54411abf", size = 10955, upload-time = "2026-01-29T12:07:45.483Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/74/64/4231445a3ce55b09080d898f9c5c99b524846babac31ffd6e043f53750a8/python_matchit-0.1.1-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b1b35b66f63463288eb1d1ed688ed2e249962453cd00dff0c78bbb771431764f", size = 261266, upload-time = "2026-01-29T12:07:49.716Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/ae/5305547581969af6bdd22e1c0bfc68dfb18ab4267e980081bb48427eb322/python_matchit-0.1.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:2603d020aea4b283fa6e2b8363f21273bbb666a33401defa66250afc250f6de0", size = 256572, upload-time = "2026-01-29T12:08:03.256Z" },
+    { url = "https://files.pythonhosted.org/packages/83/e2/4290c124705b7c52ebb752fbd91fbb39c0ba9e30e180ce7c13c35e1a0cf1/python_matchit-0.1.1-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:065ae9563f6a5535c015ef3b024a695f378d4c9176413d0db771bf41af2f02b7", size = 289648, upload-time = "2026-01-29T12:08:00.839Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/8f/6bc43c3388061a3d0f9a702649ea48a1dd1aff15de23b2bec8dd793714a1/python_matchit-0.1.1-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:54b137da5705026bb3cea2a3ceb862408189526208b266a85a2fbf5c7c442ad9", size = 296688, upload-time = "2026-01-29T12:07:54.747Z" },
+    { url = "https://files.pythonhosted.org/packages/61/07/9106c57fd24756a9579ce2392c1618721fd47f7cbb6106ee1538d135176f/python_matchit-0.1.1-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:4e3a407c2fef116ecf80657db0a9e9c1dc1e2cfee82ebeee89e0c1a7b326148a", size = 426278, upload-time = "2026-01-29T12:07:42.306Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/08/0ecee219546f9ce2d378a922d61f0b9bf494181a0f4871a976fbb064e578/python_matchit-0.1.1-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:687e458b20065cd24d5485ede98722b47c28f0f6e925264a44d1411f65a2027b", size = 316756, upload-time = "2026-01-29T12:07:53.501Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/57/a1503627d71fdfdb7a1c3db50c082588d9e5c2ff655959ea1be331614efc/python_matchit-0.1.1-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:76e442abb73f8863663e64356b674f88f52f368e3baf8fcceadd5c2fba68c910", size = 295730, upload-time = "2026-01-29T12:07:46.019Z" },
+    { url = "https://files.pythonhosted.org/packages/60/25/909d5682b527a415bcf523dfd0ba5246aa3d1a5b1702f721340ad8308351/python_matchit-0.1.1-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:e3b2ad74b87b82b54c8ae6eaf4b2eb0c8059398d0433d423adb79113f7f465e3", size = 316735, upload-time = "2026-01-29T12:07:43.347Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/04/2123c63c5aa241ea048da029b8ec02859bc23f0cb26a0cd2cb6b1f8775c0/python_matchit-0.1.1-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:9529ba0efaa722457f933166b44618c6c972f6bc5104475dcd0bda7558c03e62", size = 466044, upload-time = "2026-01-29T12:08:04.589Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/ed/7dd6293624b861d21977f543de95262696edb6b980b450e01f9ebc9eb388/python_matchit-0.1.1-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:bacc559332235dc49abd52a5af23651dd328f3a44c55358ebfb8468cab0c9b2e", size = 567190, upload-time = "2026-01-29T12:07:48.172Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/54/13698f25b919c9cf71d5f4fc78fde706236ed45cf08c9d3a61a584f86390/python_matchit-0.1.1-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:2b80206e263adfc73eb5f78932009af02920e2ab918feef2d908e6c1848131b2", size = 533932, upload-time = "2026-01-29T12:07:52.215Z" },
+    { url = "https://files.pythonhosted.org/packages/74/fa/eac9e661f4206a92cf4b10b1572ed0912d3392f41de033a79818ad30c4e9/python_matchit-0.1.1-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:5442a4a641d55959114c1787159435807c04079081e06e5745fdd6fb9c894cd1", size = 500423, upload-time = "2026-01-29T12:07:57.354Z" },
+    { url = "https://files.pythonhosted.org/packages/70/76/b01d45e415471589792030ea2d5c019c93f210b0855301ec326dd15c0209/python_matchit-0.1.1-cp38-abi3-win32.whl", hash = "sha256:23f7d7dc017f63c44d8e288d628a356a06032c05e68ca3c32946d4e53dbc7287", size = 139711, upload-time = "2026-01-29T12:07:50.957Z" },
+    { url = "https://files.pythonhosted.org/packages/04/cb/d61180ec8bbe52c53afbdd8e7fe8c0a6397f28e30a4a503b1530aa6e272b/python_matchit-0.1.1-cp38-abi3-win_amd64.whl", hash = "sha256:6954d40b4bc2be8bee2b092807efaab403cecf5988ca6aa126b9864bd71d30c7", size = 148601, upload-time = "2026-01-29T12:08:02.01Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/ed/164254b372e1c3a9aca87a55e949a16d232b8a3135f468c507af62e0d926/python_matchit-0.1.1-cp38-abi3-win_arm64.whl", hash = "sha256:287c43d093e84123aa0405f9e6982eda0c7dab30a4be3addf1ee4937d4728340", size = 143595, upload-time = "2026-01-29T12:07:56.023Z" },
+]
+
+[[package]]
 name = "ruff"
 version = "0.14.14"
 source = { registry = "https://pypi.org/simple" }
@@ -338,6 +361,7 @@ dependencies = [
     { name = "granian" },
     { name = "httpx" },
     { name = "msgspec" },
+    { name = "python-matchit" },
     { name = "urlpattern" },
     { name = "uvloop" },
 ]
@@ -357,6 +381,7 @@ requires-dist = [
     { name = "granian", specifier = ">=2.6.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "msgspec", specifier = ">=0.20.0" },
+    { name = "python-matchit", specifier = ">=0.1.1" },
     { name = "urlpattern", specifier = ">=0.1.7" },
     { name = "uvloop", specifier = ">=0.22.1" },
 ]

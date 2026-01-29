@@ -1,3 +1,4 @@
+import time
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -20,3 +21,8 @@ async def test_example(client: AsyncClient) -> None:
     r = await client.get("/")
     assert r.status_code == 200
     assert r.text == '{"Hello":"World"}'
+
+
+async def test_timeit(client: AsyncClient) -> None:
+    r = await client.get("/json")
+    assert r.status_code == 200
