@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import pytest
-from anyio import AsyncFile, open_file
+from anyio import open_file
 from httpx import AsyncClient
 
 from pulya.testing import TestClient
