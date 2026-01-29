@@ -16,7 +16,7 @@ from asgiref.typing import (
 )
 
 from sghooker.responses import Response
-from sghooker.routing import NewRouter
+from sghooker.routing import Router
 from sghooker.rsgi import HTTPProtocol, Scope
 
 
@@ -67,7 +67,7 @@ class ASGIHttpRequest(HttpRequest):
         return body
 
 
-class Application(NewRouter):
+class Application(Router):
     async def handle_http_request(self, request: HttpRequest) -> Any:
         match = self.match_route(request.method, request.path)
 
