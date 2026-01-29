@@ -1,10 +1,14 @@
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import pytest
+from anyio import AsyncFile, open_file
 from httpx import AsyncClient
 
 from pulya.testing import TestClient
 from sghooker.main import app
+
+MOCKS_DIR = Path(__file__).parent / "mocks"
 
 
 @pytest.fixture
@@ -19,6 +23,8 @@ async def test_example(client: TestClient) -> None:
     assert r.text == '{"Hello":"World"}'
 
 
-async def test_timeit(client: TestClient) -> None:
-    r = await client.get("/json")
+async def test_issue_alert_webhook(client: TestClient) -> None:
+    async with await open_file(MOCKS_DIR / "issue_alert.json") as fp:
+        data = await fp.read()
+    r = await client.post("/inbox/sentry/my-project", content=data)
     assert r.status_code == 200
