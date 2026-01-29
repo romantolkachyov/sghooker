@@ -16,7 +16,7 @@ from card_framework.v2.widgets import (
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 
 
-def build_issue_alert_message(webhook: IssueAlertWebhookBody):
+def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
     card = CardWithId(
         header=CardHeader(
             title="CardHeaderTitle",
@@ -70,4 +70,4 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody):
             ),
         ],
     )
-    return Message(cards_v2=[card]).render()
+    return Message(cards_v2=[card])
