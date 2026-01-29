@@ -1,18 +1,15 @@
 from typing import Any, AsyncGenerator
 
-import httpx
 import pytest
 from httpx import AsyncClient
 
+from pulya.testing import TestClient
 from sghooker.main import app
 
 
 @pytest.fixture
 async def client() -> AsyncGenerator[AsyncClient, Any]:
-    transport = httpx.ASGITransport(app=app)  # type: ignore[arg-type]
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
+    async with TestClient(app=app) as client:
         yield client
 
 

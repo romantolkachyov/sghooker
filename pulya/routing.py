@@ -4,9 +4,8 @@ from typing import Any, Callable, Mapping, Protocol, TypeVar, get_args, get_type
 
 import msgspec
 from matchit import Router as MatchitRouter
-from urlpattern import URLPattern
 
-from sghooker.params import Body
+from pulya.params import Body
 
 T = TypeVar("T", bound=Callable[..., Any])
 

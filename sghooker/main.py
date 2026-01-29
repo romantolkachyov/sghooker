@@ -2,8 +2,8 @@ from typing import Annotated, Any
 
 import msgspec.json
 
+from pulya.params import Body
 from sghooker.app import SGHooker
-from sghooker.params import Body
 
 app = SGHooker()
 
