@@ -1,4 +1,3 @@
-import time
 from typing import Any, AsyncGenerator
 
 import httpx

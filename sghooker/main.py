@@ -41,12 +41,21 @@ async def echo(body: Annotated[EchoBody, Body()]) -> EchoBody:
     return body
 
 
-@app.post("/:id")
+# @app.post("/:id")
+# async def by_id(id: int, body: Annotated[WebhookBody, Body()]) -> WebhookBody:
+#     return WebhookBody(key1=f"Request key1: {body.key1} {id}")
+#
+#
+# for i in range(100):
+#     app.get("/some/:id/and/:another/%s/:other" % i)(index)
+
+
+@app.post("/id/{id}")
 async def by_id(id: int, body: Annotated[WebhookBody, Body()]) -> WebhookBody:
     return WebhookBody(key1=f"Request key1: {body.key1} {id}")
 
 
 for i in range(100):
-    app.get("/some/:id/and/:another/{i}/:other")(index)
+    app.get("/some/{id}/and/{another}/%s/:other" % i)(index)
 
 app.get("/last_route")(index)
