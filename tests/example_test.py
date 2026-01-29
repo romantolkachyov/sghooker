@@ -13,12 +13,12 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
         yield client
 
 
-async def test_example(client: AsyncClient) -> None:
+async def test_example(client: TestClient) -> None:
     r = await client.get("/")
     assert r.status_code == 200
     assert r.text == '{"Hello":"World"}'
 
 
-async def test_timeit(client: AsyncClient) -> None:
+async def test_timeit(client: TestClient) -> None:
     r = await client.get("/json")
     assert r.status_code == 200
