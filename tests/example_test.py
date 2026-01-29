@@ -24,7 +24,7 @@ async def test_example(client: TestClient) -> None:
 
 
 async def test_issue_alert_webhook(client: TestClient) -> None:
-    async with await open_file(MOCKS_DIR / "issue_alert.json") as fp:
+    async with await open_file(MOCKS_DIR / "alert_triggered.json") as fp:
         data = await fp.read()
     r = await client.post("/inbox/sentry/my-project", content=data)
     assert r.status_code == 200

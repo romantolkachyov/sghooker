@@ -25,7 +25,7 @@ def test_build_issue_alert_message() -> None:
 
 
 def test_build_issue_alert_message_from_example() -> None:
-    with open(MOCKS_DIR / "issue_alert.json") as fp:
+    with open(MOCKS_DIR / "alert_triggered.json") as fp:
         msg = msgspec.json.decode(fp.read(), type=IssueAlertWebhookBody)
     result = build_issue_alert_message(msg)
     print("Alert: ", msgspec.json.encode(result.render()).decode())

@@ -3,43 +3,81 @@ from card_framework.v2 import (
     ImageType,
     Message,
     Section,
+    Widget,
 )
 from card_framework.v2.card import CardWithId
 from card_framework.v2.widgets import (
     Button,
     ButtonList,
+    DecoratedText,
     OnClick,
     OpenLink,
     TextParagraph,
 )
 
-from sghooker.schemas.issue_alert import IssueAlertWebhookBody
+from sghooker.schemas.issue_alert import (
+    ExceptionData,
+    IssueAlertWebhookBody,
+    StacktraceInfo,
+)
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
 
+def _format_stack(stack_info: StacktraceInfo) -> list[DecoratedText]:
+    # data = ["<pre><code>"]
+    data = []
+    for frame in stack_info.frames:
+        if not frame.in_app:
+            continue
+        context_line = f"&nbsp;&nbsp;{frame.context_line}"  # .replace(" ", "&nbsp;")
+        # data.append(DecoratedText(text=f"&nbsp;{frame.abs_path}", wrap_text=False))
+        data.append(
+            DecoratedText(
+                text=f"{context_line}",
+                top_label=f"{frame.abs_path}:{frame.lineno}",
+                wrap_text=False,
+            )
+        )
+    # data.append("</code></pre>")
+    return data
+
+
+def _exception_to_widget(exception: ExceptionData) -> list[Widget]:
+    return [
+        TextParagraph(
+            text=f"<b>{exception.type}</b><br>{exception.value}",
+        ),
+        *_format_stack(exception.stacktrace),
+    ]
+
+
 def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
+    event = webhook.data.event
     card = CardWithId(
         header=CardHeader(
-            title="CardHeaderTitle",
-            subtitle="CardHeaderSubtitle",
+            title=event.title,
+            subtitle=f"{event.release}&nbsp;—&nbsp;<b>{event.environment}</b>",
             image_url="https://romantolkachyov.github.io/sentry.png",
             image_type=ImageType.CIRCLE,
         ),
         sections=[
             Section(
                 widgets=[
-                    TextParagraph(text="<b>ValueError</b>"),
-                    TextParagraph(text="Exception message."),
+                    TextParagraph(text=f"<b>culprit:</b> {webhook.data.event.culprit}"),
+                    TextParagraph(text=event.message, max_lines=4),
                 ]
             ),
-            Section(
-                collapsible=True,
-                uncollapsible_widgets_count=1,
-                widgets=[
-                    TextParagraph(text="<b>Traceback</b>"),
-                    TextParagraph(text="Formated trace."),
-                    TextParagraph(text="And another"),
-                ],
+            *(
+                [
+                    Section(
+                        collapsible=True,
+                        uncollapsible_widgets_count=1,
+                        widgets=_exception_to_widget(e),
+                    )
+                    for e in event.exception.values
+                ]
+                if event.exception
+                else []
             ),
             Section(
                 widgets=[
