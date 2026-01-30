@@ -3,8 +3,7 @@
 from typing import Annotated
 
 import msgspec.json
-from dependency_injector import containers
-from dependency_injector.containers import WiringConfiguration
+from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
 from dependency_injector.providers import (
     Container,
     Factory,
@@ -13,7 +12,7 @@ from dependency_injector.providers import (
 from dependency_injector.wiring import Provide, inject
 
 from pulya.application import Application
-from pulya.containers import BaseRequestContainer, CoreRequestContainer
+from pulya.containers import CoreRequestContainer
 from pulya.params import Body
 from pulya.request import HttpRequest
 
@@ -49,8 +48,7 @@ def core_headers(
     return core.container.request.provided.headers
 
 
-@containers.copy(BaseRequestContainer)
-class RequestContainer(BaseRequestContainer):
+class RequestContainer(DeclarativeContainer):
     wiring_config = WiringConfiguration(
         modules=[__name__],
     )
