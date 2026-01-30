@@ -36,6 +36,8 @@ class Route:
 
         self.handler_type_hint = get_type_hints(handler, include_extras=True)
 
+        fields = set(self.handler_type_hint.keys()) - {"return"}
+
         # handle body
         self.body_arg_name = None
         self.body_arg_schema = None
@@ -47,14 +49,11 @@ class Route:
                         raise RuntimeError("Handler can't consume two bodies at once")
                     self.body_arg_name = k
                     self.body_arg_schema = param_args[0]
-                    continue
+                    break
+                elif getattr(arg, "__IS_MARKER__", False):
+                    fields.remove(k)
+                    break
 
-        fields = set(self.handler_type_hint.keys())
-        if "user" in fields:  # FIXME
-            fields.remove("user")
-        if "headers" in fields:  # FIXME
-            fields.remove("headers")
-        fields.remove("return")
         if self.body_arg_name:
             fields.remove(self.body_arg_name)
         self.path_params_schema = msgspec.defstruct("PathParams", fields=fields)

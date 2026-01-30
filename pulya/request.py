@@ -9,6 +9,7 @@ from pulya.rsgi import HTTPProtocol, Scope
 class HttpRequest(ABC):
     method: HTTPMethod
     path: str
+    headers: list[tuple[str, str]]
 
     @abstractmethod
     async def get_content(self) -> bytes:
@@ -25,7 +26,8 @@ class RSGIHttpRequest(HttpRequest):
 
         self.method = HTTPMethod(scope.method)
         self.path = scope.path
-        self.headers = scope.headers
+        # FIXME: this is incorrect if we have multiple headers with same name
+        self.headers = [(k, v) for k, v in scope.headers.items()]
 
     async def get_content(self) -> bytes:
         return await self._protocol()
@@ -40,7 +42,7 @@ class ASGIHttpRequest(HttpRequest):
 
         self.method = HTTPMethod(scope["method"])
         self.path = scope["path"]
-        self.headers = scope["headers"]
+        self.headers = list([(k.decode(), v.decode()) for (k, v) in scope["headers"]])
 
     async def get_content(self) -> bytes:
         body = b""

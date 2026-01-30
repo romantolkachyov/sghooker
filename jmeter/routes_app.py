@@ -3,6 +3,7 @@
 from typing import Annotated
 
 import msgspec.json
+from dependency_injector import containers
 from dependency_injector.containers import WiringConfiguration
 from dependency_injector.providers import (
     Container,
@@ -48,17 +49,14 @@ def core_headers(
     return core.container.request.provided.headers
 
 
+@containers.copy(BaseRequestContainer)
 class RequestContainer(BaseRequestContainer):
     wiring_config = WiringConfiguration(
         modules=[__name__],
     )
 
     core = Container(CoreRequestContainer)
-
-    request = core_request(core)
-    headers = core_headers(core)
-
-    user = Factory(get_user_from_request, request=request)
+    user = Factory(get_user_from_request, request=core.request)
 
 
 app = Application(RequestContainer)

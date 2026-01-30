@@ -1,3 +1,5 @@
+import asyncio
+import threading
 from asyncio import AbstractEventLoop
 from contextvars import ContextVar
 from http import HTTPStatus
@@ -30,6 +32,7 @@ class Application(Router, Generic[RequestContainerT]):
         self.request_container_class = request_container_class
         self.container: DeclarativeContainer | None = None
         self.active_request: ContextVar[HttpRequest] = ContextVar("active_request")
+        self._di_lock = threading.Lock()
 
     async def handle_http_request(self, request: HttpRequest) -> Any:
         match = self.match_route(request.method, request.path)
@@ -64,48 +67,62 @@ class Application(Router, Generic[RequestContainerT]):
     async def __call__(
         self, scope: ASGIScope, receive: ASGIReceiveCallable, send: ASGISendCallable
     ) -> None:
-        assert scope["type"] == "http", "WS is not supported yet"
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    self.__rsgi_init__(asyncio.get_running_loop())
+                    await send({"type": "lifespan.startup.complete"})
+                    return
+                elif message["type"] == "lifespan.shutdown":
+                    self.__rsgi_del__(asyncio.get_running_loop())
+                    await send({"type": "lifespan.shutdown.complete"})
+                    return
+        elif scope["type"] == "http":
+            response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
 
-        response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
-
-        if isinstance(response, Response):
-            await send(
-                HTTPResponseStartEvent(
-                    type="http.response.start",
-                    status=response.status,
-                    headers=[
-                        (b"content-type", b"text/plain"),
-                    ],
-                    trailers=False,
+            if isinstance(response, Response):
+                await send(
+                    HTTPResponseStartEvent(
+                        type="http.response.start",
+                        status=response.status,
+                        headers=[
+                            (b"content-type", b"text/plain"),
+                        ],
+                        trailers=False,
+                    )
                 )
-            )
-            await send(
-                HTTPResponseBodyEvent(
-                    type="http.response.body", body=response.content, more_body=False
+                await send(
+                    HTTPResponseBodyEvent(
+                        type="http.response.body",
+                        body=response.content,
+                        more_body=False,
+                    )
                 )
-            )
-        elif isinstance(response, msgspec.Struct) or isinstance(
-            response, (dict, list, str, int)
-        ):
-            await send(
-                HTTPResponseStartEvent(
-                    type="http.response.start",
-                    status=HTTPStatus.OK,  # FIXME: get default status
-                    headers=[
-                        (b"content-type", b"text/plain"),
-                    ],
-                    trailers=False,
+            elif isinstance(response, msgspec.Struct) or isinstance(
+                response, (dict, list, str, int)
+            ):
+                await send(
+                    HTTPResponseStartEvent(
+                        type="http.response.start",
+                        status=HTTPStatus.OK,  # FIXME: get default status
+                        headers=[
+                            (b"content-type", b"text/plain"),
+                        ],
+                        trailers=False,
+                    )
                 )
-            )
-            await send(
-                HTTPResponseBodyEvent(
-                    type="http.response.body",
-                    body=msgspec.json.encode(response),
-                    more_body=False,
+                await send(
+                    HTTPResponseBodyEvent(
+                        type="http.response.body",
+                        body=msgspec.json.encode(response),
+                        more_body=False,
+                    )
                 )
-            )
+            else:
+                raise RuntimeError(f"Unsupported response type {type(response)}")
         else:
-            raise RuntimeError(f"Unsupported response type {type(response)}")
+            raise RuntimeError(f"Unsupported scope type {type(scope['type'])}")
 
     async def __rsgi__(self, scope: Scope, protocol: HTTPProtocol) -> None:
         assert scope.proto == "http", "WS is not supported yet"
@@ -126,14 +143,16 @@ class Application(Router, Generic[RequestContainerT]):
             raise RuntimeError(f"Unsupported response type {type(response)}")
 
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
-        self.core_container = CoreRequestContainer(request_ctx=self.active_request)
-        self.container = self.request_container_class(core=self.core_container)
-        self.container.check_dependencies()
-        if fut := self.container.init_resources():
-            loop.run_until_complete(fut)
-        self.core_container.wire(warn_unresolved=True)
-        self.container.wire(warn_unresolved=True)
+        # dependency-inject is unstable in free-threading mode so creating container sequentially
+        with self._di_lock:
+            self.core_container = CoreRequestContainer(request_ctx=self.active_request)
+            self.container = self.request_container_class(core=self.core_container)
+            self.container.check_dependencies()
+            if fut := self.container.init_resources():
+                loop.run_until_complete(fut)
+            self.container.wire(warn_unresolved=True)
 
     def __rsgi_del__(self, loop: AbstractEventLoop) -> None:
-        if self.container and (fut := self.container.shutdown_resources()):
-            loop.run_until_complete(fut)
+        with self._di_lock:
+            if self.container and (fut := self.container.shutdown_resources()):
+                loop.run_until_complete(fut)
