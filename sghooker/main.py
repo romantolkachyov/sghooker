@@ -1,11 +1,10 @@
 from typing import Annotated
 
-import msgspec.json
 from dependency_injector.containers import (
     DeclarativeContainer,
     WiringConfiguration,
 )
-from dependency_injector.providers import Container
+from dependency_injector.providers import Container, Factory
 from dependency_injector.wiring import Provide, inject
 
 from pulya.containers import CoreRequestContainer
@@ -15,6 +14,14 @@ from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
 
+def get_sentry_header(headers: list[tuple[str, str]]) -> str:
+    # FIXME: suboptimal, wrap headers in Headers
+    for header in headers:
+        if header[0] == "x-sentry-resource":
+            return header[1]
+    return "Unknown"
+
+
 class RequestContainer(DeclarativeContainer):
     wiring_config = WiringConfiguration(
         modules=[__name__],
@@ -22,11 +29,14 @@ class RequestContainer(DeclarativeContainer):
 
     core = Container(CoreRequestContainer)
 
+    sentry_resource_header = Factory(get_sentry_header, core.headers)
+
 
 app = SGHooker(RequestContainer)
 
 
 @app.get("/")
+@inject
 async def index() -> dict[str, str]:
     return {"app": "sghooker"}
 
@@ -36,9 +46,9 @@ async def index() -> dict[str, str]:
 async def receive_webhook(
     project: str,
     body: Annotated[IssueAlertWebhookBody | IssueCreatedWebhookBody, Body()],
-    headers: Annotated[list[tuple[str, str]], Provide["core.headers"]],
+    sentry_resource: Annotated[str, Provide[RequestContainer.sentry_resource_header]],
 ) -> dict[str, bool]:
-    return {"success": True}
+    return {"success": True, "sentry_resource": sentry_resource}
 
 
 @app.get("/healthcheck")
