@@ -3,15 +3,16 @@
 from typing import Annotated
 
 import msgspec.json
-from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
+from dependency_injector.containers import WiringConfiguration
 from dependency_injector.providers import (
     Container,
     Factory,
+    Provider,
 )
 from dependency_injector.wiring import Provide, inject
 
 from pulya.application import Application
-from pulya.containers import CoreRequestContainer
+from pulya.containers import BaseRequestContainer, CoreRequestContainer
 from pulya.params import Body
 from pulya.request import HttpRequest
 
@@ -35,22 +36,27 @@ def get_user_from_request(request: HttpRequest) -> str:
     return f"<User {request.path}>"
 
 
-def provide_active_request(
+def core_request(
     core: Container[CoreRequestContainer],
-) -> Factory[HttpRequest]:
-    return Factory(core.container.request.provided.get.call())
+) -> Provider[HttpRequest]:
+    return Factory(core.container.request.provided)
 
 
-class RequestContainer(DeclarativeContainer):
+def core_headers(
+    core: Container[CoreRequestContainer],
+) -> Provider[HttpRequest]:
+    return core.container.request.provided.headers
+
+
+class RequestContainer(BaseRequestContainer):
     wiring_config = WiringConfiguration(
         modules=[__name__],
     )
 
     core = Container(CoreRequestContainer)
 
-    request = provide_active_request(
-        core
-    )  # Factory(core.container.request.provided.get.call())
+    request = core_request(core)
+    headers = core_headers(core)
 
     user = Factory(get_user_from_request, request=request)
 
@@ -66,9 +72,11 @@ async def index() -> dict[str, str]:
 @app.get("/test/{name}")
 @inject
 async def test(
-    user: Annotated[str, Provide[RequestContainer.user]], name: str
+    user: Annotated[str, Provide[RequestContainer.user]],
+    name: str,
+    headers: Annotated[list[tuple[str, str]], Provide["core.headers"]],
 ) -> dict[str, str]:
-    return {"test": "ok", "user": user, "name": name}
+    return {"test": "ok", "user": user, "name": name, "headers": list(headers)}
 
 
 @app.post("/echo")

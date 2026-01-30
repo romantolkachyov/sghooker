@@ -50,8 +50,10 @@ class Route:
                     continue
 
         fields = set(self.handler_type_hint.keys())
-        if "user" in fields:
+        if "user" in fields:  # FIXME
             fields.remove("user")
+        if "headers" in fields:  # FIXME
+            fields.remove("headers")
         fields.remove("return")
         if self.body_arg_name:
             fields.remove(self.body_arg_name)

@@ -126,12 +126,13 @@ class Application(Router, Generic[RequestContainerT]):
             raise RuntimeError(f"Unsupported response type {type(response)}")
 
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
-        self.core_container = CoreRequestContainer(request=self.active_request)
+        self.core_container = CoreRequestContainer(request_ctx=self.active_request)
         self.container = self.request_container_class(core=self.core_container)
         self.container.check_dependencies()
         if fut := self.container.init_resources():
             loop.run_until_complete(fut)
-        self.container.wire()
+        self.core_container.wire(warn_unresolved=True)
+        self.container.wire(warn_unresolved=True)
 
     def __rsgi_del__(self, loop: AbstractEventLoop) -> None:
         if self.container and (fut := self.container.shutdown_resources()):

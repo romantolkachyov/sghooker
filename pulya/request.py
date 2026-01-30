@@ -25,6 +25,7 @@ class RSGIHttpRequest(HttpRequest):
 
         self.method = HTTPMethod(scope.method)
         self.path = scope.path
+        self.headers = scope.headers
 
     async def get_content(self) -> bytes:
         return await self._protocol()
@@ -39,6 +40,7 @@ class ASGIHttpRequest(HttpRequest):
 
         self.method = HTTPMethod(scope["method"])
         self.path = scope["path"]
+        self.headers = scope["headers"]
 
     async def get_content(self) -> bytes:
         body = b""
