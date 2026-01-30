@@ -11,6 +11,8 @@ from asgiref.typing import (
     ASGISendCallable,
     HTTPResponseBodyEvent,
     HTTPResponseStartEvent,
+    LifespanShutdownCompleteEvent,
+    LifespanStartupCompleteEvent,
 )
 from asgiref.typing import (
     Scope as ASGIScope,
@@ -72,11 +74,15 @@ class Application(Router, Generic[RequestContainerT]):
                 message = await receive()
                 if message["type"] == "lifespan.startup":
                     self.__rsgi_init__(asyncio.get_running_loop())
-                    await send({"type": "lifespan.startup.complete"})
+                    await send(
+                        LifespanStartupCompleteEvent(type="lifespan.startup.complete")
+                    )
                     return
                 elif message["type"] == "lifespan.shutdown":
                     self.__rsgi_del__(asyncio.get_running_loop())
-                    await send({"type": "lifespan.shutdown.complete"})
+                    await send(
+                        LifespanShutdownCompleteEvent(type="lifespan.shutdown.complete")
+                    )
                     return
         elif scope["type"] == "http":
             response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
