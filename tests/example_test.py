@@ -20,7 +20,7 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
 async def test_example(client: TestClient) -> None:
     r = await client.get("/")
     assert r.status_code == 200
-    assert r.text == '{"Hello":"World"}'
+    assert r.text == '{"app":"sghooker"}'
 
 
 async def test_issue_alert_webhook(client: TestClient) -> None:

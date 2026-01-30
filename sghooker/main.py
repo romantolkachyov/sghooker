@@ -26,7 +26,17 @@ class EchoBody(msgspec.Struct):
 
 @app.get("/")
 async def index() -> dict[str, str]:
-    return {"Hello": "World"}
+    return {"app": "sghooker"}
+
+
+@app.get("/healthcheck")
+async def healthcheck() -> dict[str, bool]:
+    return {"success": True}
+
+
+@app.get("/readiness")
+async def readiness() -> dict[str, bool]:
+    return {"success": True}
 
 
 @app.post("/inbox/sentry/{project}")
@@ -35,14 +45,3 @@ async def receive_webhook(
     body: Annotated[IssueAlertWebhookBody | IssueCreatedWebhookBody, Body()],
 ) -> dict[str, bool]:
     return {"success": True}
-
-
-@app.post("/echo")
-async def echo(body: Annotated[EchoBody, Body()]) -> EchoBody:
-    return body
-
-
-for i in range(100):
-    app.get("/some/{id}/and/{another}/%s/:other" % i)(index)
-
-app.get("/last_route")(index)
