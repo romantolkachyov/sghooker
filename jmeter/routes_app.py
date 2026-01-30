@@ -1,15 +1,17 @@
 """Example app for performance testing."""
 
-from contextvars import ContextVar
 from typing import Annotated
 
 import msgspec.json
-from dependency_injector.containers import WiringConfiguration
-from dependency_injector.providers import Dependency, Factory
+from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
+from dependency_injector.providers import (
+    Container,
+    Factory,
+)
 from dependency_injector.wiring import Provide, inject
 
 from pulya.application import Application
-from pulya.containers import BaseRequestContainer
+from pulya.containers import CoreRequestContainer
 from pulya.params import Body
 from pulya.request import HttpRequest
 
@@ -33,14 +35,24 @@ def get_user_from_request(request: HttpRequest) -> str:
     return f"<User {request.path}>"
 
 
-class RequestContainer(BaseRequestContainer):
+def provide_active_request(
+    core: Container[CoreRequestContainer],
+) -> Factory[HttpRequest]:
+    return Factory(core.container.request.provided.get.call())
+
+
+class RequestContainer(DeclarativeContainer):
     wiring_config = WiringConfiguration(
         modules=[__name__],
     )
 
-    request: Dependency[ContextVar[HttpRequest]] = Dependency(ContextVar)
+    core = Container(CoreRequestContainer)
 
-    user = Factory(get_user_from_request, request=request.provided.get.call())
+    request = provide_active_request(
+        core
+    )  # Factory(core.container.request.provided.get.call())
+
+    user = Factory(get_user_from_request, request=request)
 
 
 app = Application(RequestContainer)

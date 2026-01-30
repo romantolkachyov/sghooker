@@ -1,9 +1,10 @@
 from typing import TypeVar
 
-from pulya.application import Application
-from pulya.containers import BaseRequestContainer
+from dependency_injector.containers import DeclarativeContainer
 
-T = TypeVar("T", bound=BaseRequestContainer)
+from pulya.application import Application
+
+T = TypeVar("T", bound=DeclarativeContainer)
 
 
 class SGHooker(Application[T]):

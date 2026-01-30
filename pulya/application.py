@@ -15,13 +15,13 @@ from asgiref.typing import (
 )
 from dependency_injector.containers import DeclarativeContainer
 
-from pulya.containers import BaseRequestContainer
+from pulya.containers import CoreRequestContainer
 from pulya.request import ASGIHttpRequest, HttpRequest, RSGIHttpRequest
 from pulya.responses import Response
 from pulya.routing import Router
 from pulya.rsgi import HTTPProtocol, Scope
 
-RequestContainerT = TypeVar("RequestContainerT", bound=BaseRequestContainer)
+RequestContainerT = TypeVar("RequestContainerT", bound=DeclarativeContainer)
 
 
 class Application(Router, Generic[RequestContainerT]):
@@ -126,7 +126,8 @@ class Application(Router, Generic[RequestContainerT]):
             raise RuntimeError(f"Unsupported response type {type(response)}")
 
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
-        self.container = self.request_container_class(request=self.active_request)
+        self.core_container = CoreRequestContainer(request=self.active_request)
+        self.container = self.request_container_class(core=self.core_container)
         self.container.check_dependencies()
         if fut := self.container.init_resources():
             loop.run_until_complete(fut)
