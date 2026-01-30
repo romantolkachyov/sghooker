@@ -1,5 +1,5 @@
-from dependency_injector.containers import DeclarativeContainer
+from dependency_injector import containers
 
 
-class AppContainer(DeclarativeContainer):
+class AppContainer(containers.DeclarativeContainer):
     pass

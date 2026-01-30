@@ -2,12 +2,13 @@ from typing import Annotated
 
 import msgspec.json
 
+from pulya.containers import BaseRequestContainer
 from pulya.params import Body
 from sghooker.app import SGHooker
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
-app = SGHooker()
+app = SGHooker(BaseRequestContainer)
 
 
 class EchoBodyItem(msgspec.Struct):

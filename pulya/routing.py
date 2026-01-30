@@ -43,14 +43,15 @@ class Route:
             param_args = get_args(param)
             for arg in param_args:
                 if isinstance(arg, Body):
+                    if self.body_arg_name:
+                        raise RuntimeError("Handler can't consume two bodies at once")
                     self.body_arg_name = k
                     self.body_arg_schema = param_args[0]
-                    break
-            else:
-                continue
-            break
+                    continue
 
         fields = set(self.handler_type_hint.keys())
+        if "user" in fields:
+            fields.remove("user")
         fields.remove("return")
         if self.body_arg_name:
             fields.remove(self.body_arg_name)
