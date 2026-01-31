@@ -1,9 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Iterable, Iterator
-
-from pulya.rsgi import Headers as RSGIHeadersP
+from typing import Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -83,17 +81,3 @@ class Headers:
 
     def set_list(self, key: str, values: list[str]) -> None:
         self._headers[key.lower()] = values
-
-
-class ASGIHeaders(Headers):
-    def __init__(self, headers: Iterable[tuple[bytes, bytes]]) -> None:
-        self._headers = defaultdict(list)
-        for k, v in headers:
-            self.add(k.decode(), v.decode())
-
-
-class RSGIHeaders(Headers):
-    def __init__(self, headers: RSGIHeadersP) -> None:
-        self._headers = defaultdict(list)
-        for k in headers:
-            self.set_list(k, headers.get_all(k))

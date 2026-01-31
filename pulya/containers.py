@@ -9,7 +9,7 @@ from dependency_injector.providers import (
     Provider,
 )
 
-from pulya.request import HttpRequest
+from pulya.request import Request
 
 T = TypeVar("T")
 
@@ -19,20 +19,13 @@ class _BodyWrapper:
         self.content = content
 
     def deserialize(self, body_arg_schema: type[T]) -> T:
-        if not self.content:  # FIXME
-            raise RuntimeError("Bad request FIXME")
-            # return Response(
-            #     status=HTTPStatus.BAD_REQUEST,
-            #     content=msgspec.json.encode({"error": "Body is required."}),
-            #     headers=[],
-            # )
-        print(f"Decode {self.content.decode()} with {body_arg_schema}")
-        return msgspec.json.decode(self.content, type=body_arg_schema)
+        content = self.content or "null".encode()
+        return msgspec.json.decode(content, type=body_arg_schema)
 
 
 class RequestContainer(DeclarativeContainer):
     ctx = Dependency(ContextVar)
-    request: Provider[HttpRequest] = Factory(ctx.provided.get.call())
+    request: Provider[Request] = Factory(ctx.provided.get.call())
 
     headers = Factory(request.provided.headers)
     body = Factory(_BodyWrapper, request.provided.get_content.call())

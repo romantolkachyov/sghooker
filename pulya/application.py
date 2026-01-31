@@ -20,11 +20,12 @@ from asgiref.typing import (
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.wiring import clear_cache
 
+from pulya.asgi import ASGIRequest
 from pulya.containers import RequestContainer
-from pulya.request import ASGIHttpRequest, HttpRequest, RSGIHttpRequest
+from pulya.request import Request
 from pulya.responses import Response
 from pulya.routing import Router
-from pulya.rsgi import HTTPProtocol, Scope
+from pulya.rsgi import HTTPProtocol, RSGIRequest, Scope
 
 DIContainer = TypeVar("DIContainer", bound=DeclarativeContainer)
 
@@ -34,10 +35,10 @@ class Application(Router, Generic[DIContainer]):
         super().__init__()
         self.container_class = container_class
         self.container: DeclarativeContainer | None = None
-        self.active_request: ContextVar[HttpRequest] = ContextVar("active_request")
+        self.active_request: ContextVar[Request] = ContextVar("active_request")
         self._di_lock = threading.Lock()
 
-    async def handle_http_request(self, request: HttpRequest) -> Any:
+    async def handle_http_request(self, request: Request) -> Any:
         match = self.match_route(request.method, request.path)
 
         if match is None:
@@ -75,7 +76,7 @@ class Application(Router, Generic[DIContainer]):
                     )
                     return
         elif scope["type"] == "http":
-            response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
+            response = await self.handle_http_request(ASGIRequest(scope, receive))
 
             if isinstance(response, Response):
                 await send(
@@ -123,7 +124,7 @@ class Application(Router, Generic[DIContainer]):
     async def __rsgi__(self, scope: Scope, protocol: HTTPProtocol) -> None:
         assert scope.proto == "http", "WS is not supported yet"
 
-        response = await self.handle_http_request(RSGIHttpRequest(scope, protocol))
+        response = await self.handle_http_request(RSGIRequest(scope, protocol))
 
         if isinstance(response, Response):
             protocol.response_bytes(

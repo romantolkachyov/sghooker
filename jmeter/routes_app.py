@@ -9,7 +9,7 @@ from dependency_injector.wiring import Provide, inject
 from pulya.application import Application
 from pulya.containers import RequestContainer
 from pulya.headers import Headers
-from pulya.request import HttpRequest
+from pulya.request import Request
 
 
 class EchoBodyItem(msgspec.Struct):
@@ -26,7 +26,7 @@ class EchoBody(msgspec.Struct):
     items: list[EchoBodyItem]
 
 
-def get_user_from_request(request: HttpRequest) -> str:
+def get_user_from_request(request: Request) -> str:
     return f"<User {request.path}>"
 
 

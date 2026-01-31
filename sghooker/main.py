@@ -41,8 +41,8 @@ def Header(name: str, default: None = None) -> Any:
 async def receive_webhook(
     project: str,
     body: Annotated[
-        IssueAlertWebhookBody | IssueCreatedWebhookBody,
-        Body(IssueAlertWebhookBody | IssueCreatedWebhookBody),
+        IssueAlertWebhookBody | IssueCreatedWebhookBody | None,
+        Body(IssueAlertWebhookBody | IssueCreatedWebhookBody | None),
     ],
     sentry_resource: Annotated[str | None, Provide[Container.sentry_resource_header]],
     simple_header: Annotated[str | None, Header("x-simple-header")],
