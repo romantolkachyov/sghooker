@@ -5,13 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "asgiref>=3.11.0",
-    "dependency-injector>=4.48.3",
     "granian>=2.6.1",
-    "httpx>=0.28.1",
-    "msgspec>=0.20.0",
+    "pulya>=0.1.0",
     "python-card-framework>=2.4.0",
-    "python-matchit>=0.3.0",
     "uvloop>=0.22.1",
 ]
 

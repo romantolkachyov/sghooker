@@ -1,39 +1,14 @@
 from typing import Annotated, Any
 
-from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
-from mypy.types import UnionType
 
-from pulya.containers import RequestContainer
-from pulya.headers import Headers
+from pulya.params import Body, Header
 from sghooker.app import SGHooker
+from sghooker.containers import Container
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
-
-def get_sentry_header(headers: Headers) -> str | None:
-    return headers.get("x-sentry-resource", "Unknown")
-
-
-class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=[__name__],
-    )
-
-    request = providers.Container(RequestContainer)
-
-    sentry_resource_header = providers.Factory(get_sentry_header, request.headers)
-
-
 app = SGHooker(Container)
-
-
-def Body(_type: type | UnionType) -> Any:
-    return Provide[RequestContainer.body.provided.deserialize.call(_type)]
-
-
-def Header(name: str, default: None = None) -> Any:
-    return Provide[RequestContainer.headers.provided.get.call(name, default)]
 
 
 @app.post("/inbox/sentry/{project}")

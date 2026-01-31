@@ -6,7 +6,7 @@ import msgspec.json
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 
-from pulya.application import Application
+from pulya.application import Pulya
 from pulya.containers import RequestContainer
 from pulya.headers import Headers
 from pulya.request import Request
@@ -40,7 +40,7 @@ class Container(containers.DeclarativeContainer):
     user = providers.Factory(get_user_from_request, request=request.request)
 
 
-app = Application(Container)
+app = Pulya(Container)
 
 
 @app.get("/")

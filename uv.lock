@@ -400,6 +400,22 @@ wheels = [
 ]
 
 [[package]]
+name = "pulya"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "dependency-injector" },
+    { name = "httpx" },
+    { name = "msgspec" },
+    { name = "python-matchit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cd/fa/fe5baaddfbbceab65f8584bf83243d3950c8d0d73292ac33e67918864d78/pulya-0.1.0.tar.gz", hash = "sha256:9a597ea366a33b55087ee0dee8fbac377daa94f8fb9c5485778260f285825950", size = 6644, upload-time = "2026-01-31T22:59:50.658Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/a7/a653cf278d12b9b31bdff0bf9c0dc932578badf0e952dcbb5fa1041dd5bd/pulya-0.1.0-py3-none-any.whl", hash = "sha256:b84e988d017d00b0f201c00c212709d90561e281328001f7ecc7a716b574d6ad", size = 9933, upload-time = "2026-01-31T22:59:51.554Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -504,13 +520,9 @@ name = "sghooker"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "asgiref" },
-    { name = "dependency-injector" },
     { name = "granian" },
-    { name = "httpx" },
-    { name = "msgspec" },
+    { name = "pulya" },
     { name = "python-card-framework" },
-    { name = "python-matchit" },
     { name = "uvloop" },
 ]
 
@@ -525,13 +537,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "asgiref", specifier = ">=3.11.0" },
-    { name = "dependency-injector", specifier = ">=4.48.3" },
     { name = "granian", specifier = ">=2.6.1" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "msgspec", specifier = ">=0.20.0" },
+    { name = "pulya", specifier = ">=0.1.0" },
     { name = "python-card-framework", specifier = ">=2.4.0" },
-    { name = "python-matchit", specifier = ">=0.3.0" },
     { name = "uvloop", specifier = ">=0.22.1" },
 ]
 
