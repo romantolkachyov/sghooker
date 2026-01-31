@@ -1,4 +1,11 @@
-from typing import Literal, Mapping, Protocol, AsyncIterator
+from typing import AsyncIterator, Iterable, Iterator, Literal, Protocol
+
+
+class Headers(Protocol):
+    def __getitem__(self, item: str) -> str: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def get_all(self, key: str) -> list[str]: ...
+    def items(self) -> Iterable[tuple[str, str]]: ...
 
 
 class Scope:
@@ -20,7 +27,7 @@ class Scope:
     #: URL portion after the ?
     query_string: str
     #: a mapping-like object, where key is the header name, and value is the header value; header names are always lower-case; a get_all method returns a list of all the header values for the given key
-    headers: Mapping[str, str]
+    headers: Headers
     #: an optional string containing the relevant pseudo-header (empty on HTTP versions prior to 2)
     authority: str | None
 

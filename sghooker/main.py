@@ -8,18 +8,15 @@ from dependency_injector.providers import Container, Factory
 from dependency_injector.wiring import Provide, inject
 
 from pulya.containers import CoreRequestContainer
+from pulya.headers import Headers
 from pulya.params import Body
 from sghooker.app import SGHooker
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
 
 
-def get_sentry_header(headers: list[tuple[str, str]]) -> str:
-    # FIXME: suboptimal, wrap headers in Headers
-    for header in headers:
-        if header[0] == "x-sentry-resource":
-            return header[1]
-    return "Unknown"
+def get_sentry_header(headers: Headers) -> str | None:
+    return headers.get("x-sentry-resource", "Unknown")
 
 
 class RequestContainer(DeclarativeContainer):
@@ -46,8 +43,10 @@ async def index() -> dict[str, str]:
 async def receive_webhook(
     project: str,
     body: Annotated[IssueAlertWebhookBody | IssueCreatedWebhookBody, Body()],
-    sentry_resource: Annotated[str, Provide[RequestContainer.sentry_resource_header]],
-) -> dict[str, bool]:
+    sentry_resource: Annotated[
+        str | None, Provide[RequestContainer.sentry_resource_header]
+    ],
+) -> dict[str, bool | str | None]:
     return {"success": True, "sentry_resource": sentry_resource}
 
 

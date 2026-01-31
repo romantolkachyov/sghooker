@@ -7,7 +7,6 @@ from dependency_injector.containers import DeclarativeContainer, WiringConfigura
 from dependency_injector.providers import (
     Container,
     Factory,
-    Provider,
 )
 from dependency_injector.wiring import Provide, inject
 
@@ -34,18 +33,6 @@ class EchoBody(msgspec.Struct):
 def get_user_from_request(request: HttpRequest) -> str:
     # print("Get user for example")
     return f"<User {request.path}>"
-
-
-def core_request(
-    core: Container[CoreRequestContainer],
-) -> Provider[HttpRequest]:
-    return Factory(core.container.request.provided)
-
-
-def core_headers(
-    core: Container[CoreRequestContainer],
-) -> Provider[HttpRequest]:
-    return core.container.request.provided.headers
 
 
 class RequestContainer(DeclarativeContainer):

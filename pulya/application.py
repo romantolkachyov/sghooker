@@ -151,8 +151,9 @@ class Application(Router, Generic[RequestContainerT]):
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
         # dependency-inject is unstable in free-threading mode so creating container sequentially
         with self._di_lock:
-            self.core_container = CoreRequestContainer(request_ctx=self.active_request)
-            self.container = self.request_container_class(core=self.core_container)
+            self.container = self.request_container_class(
+                core=CoreRequestContainer(request_ctx=self.active_request)
+            )
             self.container.check_dependencies()
             if fut := self.container.init_resources():
                 loop.run_until_complete(fut)
