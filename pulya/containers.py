@@ -26,11 +26,13 @@ class _BodyWrapper:
             #     content=msgspec.json.encode({"error": "Body is required."}),
             #     headers=[],
             # )
+        print(f"Decode {self.content.decode()} with {body_arg_schema}")
         return msgspec.json.decode(self.content, type=body_arg_schema)
 
 
 class RequestContainer(DeclarativeContainer):
-    request_ctx = Dependency(ContextVar)
-    request: Provider[HttpRequest] = Factory(request_ctx.provided.get.call())
+    ctx = Dependency(ContextVar)
+    request: Provider[HttpRequest] = Factory(ctx.provided.get.call())
+
     headers = Factory(request.provided.headers)
     body = Factory(_BodyWrapper, request.provided.get_content.call())

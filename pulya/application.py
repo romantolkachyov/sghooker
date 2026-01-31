@@ -141,15 +141,15 @@ class Application(Router, Generic[DIContainer]):
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
         # dependency-inject is unstable in free-threading mode so creating container sequentially
         with self._di_lock:
-            core = RequestContainer(request_ctx=self.active_request)
-            self.container = self.container_class(core=core)
+            request_container = RequestContainer(ctx=self.active_request)
+            self.container = self.container_class(request=request_container)
             self.container.check_dependencies()
             if fut := self.container.init_resources():
                 loop.run_until_complete(fut)
-            core.wiring_config = self.container.wiring_config
-            # DI package has incomplete typings. Will be fixed in the upcoming release
+            request_container.wiring_config = self.container.wiring_config
+            # DI package has incomplete typings. Will be fixed in the upcoming release.
             self.container.wire(keep_cache=True)  # type: ignore[call-arg]
-            core.wire(keep_cache=True)  # type: ignore[call-arg]
+            request_container.wire(keep_cache=True)  # type: ignore[call-arg]
             clear_cache()
 
     def __rsgi_del__(self, loop: AbstractEventLoop) -> None:

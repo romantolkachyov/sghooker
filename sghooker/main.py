@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
+from mypy.types import UnionType
 
 from pulya.containers import RequestContainer
 from pulya.headers import Headers
@@ -19,17 +20,20 @@ class Container(containers.DeclarativeContainer):
         modules=[__name__],
     )
 
-    core = providers.Container(RequestContainer)
+    request = providers.Container(RequestContainer)
 
-    sentry_resource_header = providers.Factory(get_sentry_header, core.headers)
+    sentry_resource_header = providers.Factory(get_sentry_header, request.headers)
 
 
 app = SGHooker(Container)
 
 
-@app.get("/")
-async def index() -> dict[str, str]:
-    return {"app": "sghooker"}
+def Body(_type: type | UnionType) -> Any:
+    return Provide[RequestContainer.body.provided.deserialize.call(_type)]
+
+
+def Header(name: str, default: None = None) -> Any:
+    return Provide[RequestContainer.headers.provided.get.call(name, default)]
 
 
 @app.post("/inbox/sentry/{project}")
@@ -38,22 +42,25 @@ async def receive_webhook(
     project: str,
     body: Annotated[
         IssueAlertWebhookBody | IssueCreatedWebhookBody,
-        Provide[
-            RequestContainer.body.provided.deserialize.call(
-                IssueAlertWebhookBody | IssueCreatedWebhookBody
-            )
-        ],
+        Body(IssueAlertWebhookBody | IssueCreatedWebhookBody),
     ],
     sentry_resource: Annotated[str | None, Provide[Container.sentry_resource_header]],
+    simple_header: Annotated[str | None, Header("x-simple-header")],
 ) -> dict[str, Any]:
     return {
         "success": True,
         "sentry_resource": sentry_resource,
+        "simple_header": simple_header,
         "project": project,
         "body": body,
         "body_type": str(type(body)),
         "test": {},
     }
+
+
+@app.get("/")
+async def index() -> dict[str, str]:
+    return {"app": "sghooker"}
 
 
 @app.get("/healthcheck")

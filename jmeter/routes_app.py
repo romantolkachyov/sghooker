@@ -35,8 +35,9 @@ class Container(containers.DeclarativeContainer):
         modules=[__name__],
     )
 
-    core = providers.Container(RequestContainer)
-    user = providers.Factory(get_user_from_request, request=core.request)
+    request = providers.Container(RequestContainer)
+
+    user = providers.Factory(get_user_from_request, request=request.request)
 
 
 app = Application(Container)

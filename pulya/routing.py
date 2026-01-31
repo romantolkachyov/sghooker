@@ -84,5 +84,8 @@ class Router:
     def match_route(
         self, method: HTTPMethod, path: str
     ) -> tuple[Route, Mapping[str, str]] | None:
-        res = self._routers_by_method[method].at(path)
+        try:
+            res = self._routers_by_method[method].at(path)
+        except LookupError:
+            return None
         return res.value, res.params
