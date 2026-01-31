@@ -1,4 +1,16 @@
-from typing import Literal, Mapping, Protocol, AsyncIterator
+from collections import defaultdict
+from http import HTTPMethod
+from typing import AsyncIterator, Iterable, Iterator, Literal, Protocol
+
+from pulya.headers import Headers
+from pulya.request import Request
+
+
+class _Headers(Protocol):
+    def __getitem__(self, item: str) -> str: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def get_all(self, key: str) -> list[str]: ...
+    def items(self) -> Iterable[tuple[str, str]]: ...
 
 
 class Scope:
@@ -20,7 +32,7 @@ class Scope:
     #: URL portion after the ?
     query_string: str
     #: a mapping-like object, where key is the header name, and value is the header value; header names are always lower-case; a get_all method returns a list of all the header values for the given key
-    headers: Mapping[str, str]
+    headers: _Headers
     #: an optional string containing the relevant pseudo-header (empty on HTTP versions prior to 2)
     authority: str | None
 
@@ -79,3 +91,33 @@ class HTTPProtocol(Protocol):
     def response_stream(self, status: int, headers: list[tuple[str, str]]) -> Transport:
         """Response_stream to start a stream response."""
         ...
+
+
+class RSGIRequest(Request):
+    __slots__ = ("_scope", "_protocol")
+
+    def __init__(self, scope: Scope, protocol: HTTPProtocol) -> None:
+        self._scope = scope
+        self._protocol = protocol
+
+    @property
+    def method(self) -> HTTPMethod:
+        return HTTPMethod(self._scope.method)
+
+    @property
+    def path(self) -> str:
+        return self._scope.path
+
+    @property
+    def headers(self) -> Headers:
+        return RSGIHeaders(self._scope.headers)
+
+    async def get_content(self) -> bytes:
+        return await self._protocol()
+
+
+class RSGIHeaders(Headers):
+    def __init__(self, headers: _Headers) -> None:
+        self._headers = defaultdict(list)
+        for k in headers:
+            self.set_list(k, headers.get_all(k))

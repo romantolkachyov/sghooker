@@ -3,11 +3,13 @@
 from typing import Annotated
 
 import msgspec.json
+from dependency_injector import containers, providers
+from dependency_injector.wiring import Provide, inject
 
 from pulya.application import Application
-from pulya.params import Body
-
-app = Application()
+from pulya.containers import RequestContainer
+from pulya.headers import Headers
+from pulya.request import Request
 
 
 class EchoBodyItem(msgspec.Struct):
@@ -24,13 +26,45 @@ class EchoBody(msgspec.Struct):
     items: list[EchoBodyItem]
 
 
+def get_user_from_request(request: Request) -> str:
+    return f"<User {request.path}>"
+
+
+class Container(containers.DeclarativeContainer):
+    wiring_config = containers.WiringConfiguration(
+        modules=[__name__],
+    )
+
+    request = providers.Container(RequestContainer)
+
+    user = providers.Factory(get_user_from_request, request=request.request)
+
+
+app = Application(Container)
+
+
 @app.get("/")
 async def index() -> dict[str, str]:
     return {"Hello": "World"}
 
 
+@app.get("/test/{name}")
+@inject
+async def test(
+    user: Annotated[str, Provide[Container.user]],
+    name: str,
+    headers: Annotated[Headers, Provide[RequestContainer.headers]],
+) -> dict[str, str]:
+    return {"test": "ok", "user": user, "name": name, "headers": list(headers)}
+
+
 @app.post("/echo")
-async def echo(body: Annotated[EchoBody, Body()]) -> EchoBody:
+@inject
+async def echo(
+    body: Annotated[
+        EchoBody, Provide[RequestContainer.body.provided.deserialize.call(EchoBody)]
+    ],
+) -> EchoBody:
     return body
 
 

@@ -1,6 +1,9 @@
+import asyncio
+import threading
 from asyncio import AbstractEventLoop
+from contextvars import ContextVar
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import msgspec
 from asgiref.typing import (
@@ -8,19 +11,34 @@ from asgiref.typing import (
     ASGISendCallable,
     HTTPResponseBodyEvent,
     HTTPResponseStartEvent,
+    LifespanShutdownCompleteEvent,
+    LifespanStartupCompleteEvent,
 )
 from asgiref.typing import (
     Scope as ASGIScope,
 )
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.wiring import clear_cache
 
-from pulya.request import ASGIHttpRequest, HttpRequest, RSGIHttpRequest
+from pulya.asgi import ASGIRequest
+from pulya.containers import RequestContainer
+from pulya.request import Request
 from pulya.responses import Response
 from pulya.routing import Router
-from pulya.rsgi import HTTPProtocol, Scope
+from pulya.rsgi import HTTPProtocol, RSGIRequest, Scope
+
+DIContainer = TypeVar("DIContainer", bound=DeclarativeContainer)
 
 
-class Application(Router):
-    async def handle_http_request(self, request: HttpRequest) -> Any:
+class Application(Router, Generic[DIContainer]):
+    def __init__(self, container_class: type[DIContainer]) -> None:
+        super().__init__()
+        self.container_class = container_class
+        self.container: DeclarativeContainer | None = None
+        self.active_request: ContextVar[Request] = ContextVar("active_request")
+        self._di_lock = threading.Lock()
+
+    async def handle_http_request(self, request: Request) -> Any:
         match = self.match_route(request.method, request.path)
 
         if match is None:
@@ -29,7 +47,6 @@ class Application(Router):
                 headers=[],
                 content=msgspec.json.encode({"error": "Not found."}),
             )
-
         route, match_dict = match
         validated_path_params = msgspec.convert(
             match_dict, type=route.path_params_schema, strict=False
@@ -37,70 +54,77 @@ class Application(Router):
 
         handler_params = msgspec.structs.asdict(validated_path_params)
 
-        if route.body_arg_name and route.body_arg_schema:
-            body_content = await request.get_content()
-            if not body_content:
-                return Response(
-                    status=HTTPStatus.BAD_REQUEST,
-                    content=msgspec.json.encode({"error": "Body is required."}),
-                    headers=[],
-                )
-            handler_params[route.body_arg_name] = msgspec.json.decode(
-                body_content, type=route.body_arg_schema
-            )
-
-        return await route.handler(**handler_params)
+        with self.active_request.set(request):
+            return await route.handler(**handler_params)
 
     async def __call__(
         self, scope: ASGIScope, receive: ASGIReceiveCallable, send: ASGISendCallable
     ) -> None:
-        assert scope["type"] == "http", "WS is not supported yet"
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    self.__rsgi_init__(asyncio.get_running_loop())
+                    await send(
+                        LifespanStartupCompleteEvent(type="lifespan.startup.complete")
+                    )
+                    return
+                elif message["type"] == "lifespan.shutdown":
+                    self.__rsgi_del__(asyncio.get_running_loop())
+                    await send(
+                        LifespanShutdownCompleteEvent(type="lifespan.shutdown.complete")
+                    )
+                    return
+        elif scope["type"] == "http":
+            response = await self.handle_http_request(ASGIRequest(scope, receive))
 
-        response = await self.handle_http_request(ASGIHttpRequest(scope, receive))
-
-        if isinstance(response, Response):
-            await send(
-                HTTPResponseStartEvent(
-                    type="http.response.start",
-                    status=response.status,
-                    headers=[
-                        (b"content-type", b"text/plain"),
-                    ],
-                    trailers=False,
+            if isinstance(response, Response):
+                await send(
+                    HTTPResponseStartEvent(
+                        type="http.response.start",
+                        status=response.status,
+                        headers=[
+                            (b"content-type", b"text/plain"),
+                        ],
+                        trailers=False,
+                    )
                 )
-            )
-            await send(
-                HTTPResponseBodyEvent(
-                    type="http.response.body", body=response.content, more_body=False
+                await send(
+                    HTTPResponseBodyEvent(
+                        type="http.response.body",
+                        body=response.content,
+                        more_body=False,
+                    )
                 )
-            )
-        elif isinstance(response, msgspec.Struct) or isinstance(
-            response, (dict, list, str, int)
-        ):
-            await send(
-                HTTPResponseStartEvent(
-                    type="http.response.start",
-                    status=HTTPStatus.OK,  # FIXME: get default status
-                    headers=[
-                        (b"content-type", b"text/plain"),
-                    ],
-                    trailers=False,
+            elif isinstance(response, msgspec.Struct) or isinstance(
+                response, (dict, list, str, int)
+            ):
+                await send(
+                    HTTPResponseStartEvent(
+                        type="http.response.start",
+                        status=HTTPStatus.OK,  # FIXME: get default status
+                        headers=[
+                            (b"content-type", b"text/plain"),
+                        ],
+                        trailers=False,
+                    )
                 )
-            )
-            await send(
-                HTTPResponseBodyEvent(
-                    type="http.response.body",
-                    body=msgspec.json.encode(response),
-                    more_body=False,
+                await send(
+                    HTTPResponseBodyEvent(
+                        type="http.response.body",
+                        body=msgspec.json.encode(response),
+                        more_body=False,
+                    )
                 )
-            )
+            else:
+                raise RuntimeError(f"Unsupported response type {type(response)}")
         else:
-            raise RuntimeError(f"Unsupported response type {type(response)}")
+            raise RuntimeError(f"Unsupported scope type {type(scope['type'])}")
 
     async def __rsgi__(self, scope: Scope, protocol: HTTPProtocol) -> None:
         assert scope.proto == "http", "WS is not supported yet"
 
-        response = await self.handle_http_request(RSGIHttpRequest(scope, protocol))
+        response = await self.handle_http_request(RSGIRequest(scope, protocol))
 
         if isinstance(response, Response):
             protocol.response_bytes(
@@ -116,7 +140,21 @@ class Application(Router):
             raise RuntimeError(f"Unsupported response type {type(response)}")
 
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
-        print("Do some init job")
+        # dependency-inject is unstable in free-threading mode so creating container sequentially
+        with self._di_lock:
+            request_container = RequestContainer(ctx=self.active_request)
+            self.container = self.container_class(request=request_container)
+            self.container.check_dependencies()
+            if fut := self.container.init_resources():
+                loop.run_until_complete(fut)
+            request_container.wiring_config = self.container.wiring_config
+            # DI package has incomplete typings. Will be fixed in the upcoming release.
+            self.container.wire(keep_cache=True)  # type: ignore[call-arg]
+            request_container.wire(keep_cache=True)  # type: ignore[call-arg]
+            clear_cache()
 
     def __rsgi_del__(self, loop: AbstractEventLoop) -> None:
-        print("Do some cleanup")
+        with self._di_lock:
+            if self.container and (fut := self.container.shutdown_resources()):
+                loop.run_until_complete(fut)
+            # clear_cache()

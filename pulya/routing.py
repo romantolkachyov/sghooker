@@ -5,8 +5,6 @@ from typing import Any, Callable, Mapping, Protocol, TypeVar, get_args, get_type
 import msgspec
 from matchit import Router as MatchitRouter
 
-from pulya.params import Body
-
 T = TypeVar("T", bound=Callable[..., Any])
 
 
@@ -36,24 +34,16 @@ class Route:
 
         self.handler_type_hint = get_type_hints(handler, include_extras=True)
 
-        # handle body
-        self.body_arg_name = None
-        self.body_arg_schema = None
+        fields = set(self.handler_type_hint.keys()) - {"return"}
+
+        # Remove fields handled by DI
         for k, param in self.handler_type_hint.items():
             param_args = get_args(param)
             for arg in param_args:
-                if isinstance(arg, Body):
-                    self.body_arg_name = k
-                    self.body_arg_schema = param_args[0]
+                if getattr(arg, "__IS_MARKER__", False):
+                    fields.remove(k)
                     break
-            else:
-                continue
-            break
 
-        fields = set(self.handler_type_hint.keys())
-        fields.remove("return")
-        if self.body_arg_name:
-            fields.remove(self.body_arg_name)
         self.path_params_schema = msgspec.defstruct("PathParams", fields=fields)
 
 
@@ -94,5 +84,8 @@ class Router:
     def match_route(
         self, method: HTTPMethod, path: str
     ) -> tuple[Route, Mapping[str, str]] | None:
-        res = self._routers_by_method[method].at(path)
+        try:
+            res = self._routers_by_method[method].at(path)
+        except LookupError:
+            return None
         return res.value, res.params
