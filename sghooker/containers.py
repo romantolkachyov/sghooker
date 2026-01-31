@@ -1,5 +1,4 @@
 from dependency_injector import containers, providers
-
 from pulya.containers import RequestContainer
 from pulya.headers import Headers
 
@@ -14,7 +13,7 @@ def get_sentry_header(headers: Headers) -> str | None:
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
-        modules=[__name__],
+        packages=["sghooker"],
     )
 
     request = providers.Container(RequestContainer)
