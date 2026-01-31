@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Iterable
+from typing import Iterable, Iterator
 
 from pulya.rsgi import Headers as RSGIHeadersP
 
@@ -28,6 +28,11 @@ class Headers:
     def __getattr__(self, item: str) -> str | None:
         return self.get(item)
 
+    def __iter__(self) -> Iterator[tuple[str, str]]:
+        for k in self._headers:
+            for v in self._headers[k]:
+                yield k, v
+
     def get(
         self,
         key: str,
@@ -41,6 +46,7 @@ class Headers:
         It is better to use dedicated methods like :py:meth:`get_first`, :py:meth:`get_last` or
         :py:meth:`get_list` to avoid warnings if multiple headers expected.
         """
+        key = key.lower()
         values = self.get_list(key)
         if values is None or len(values) == 0:
             return default
@@ -67,16 +73,16 @@ class Headers:
         return self.get(key, default, ManyStrategy.last)
 
     def add(self, key: str, value: str) -> None:
-        self._headers[key].append(value)
+        self._headers[key.lower()].append(value)
 
     def set(self, key: str, value: str) -> None:
-        self._headers[key] = [value]
+        self._headers[key.lower()] = [value]
 
     def get_list(self, key: str) -> list[str]:
-        return self._headers.get(key, [])
+        return self._headers.get(key.lower(), [])
 
     def set_list(self, key: str, values: list[str]) -> None:
-        self._headers[key] = values
+        self._headers[key.lower()] = values
 
 
 class ASGIHeaders(Headers):

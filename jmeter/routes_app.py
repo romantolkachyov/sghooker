@@ -3,16 +3,12 @@
 from typing import Annotated
 
 import msgspec.json
-from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
-from dependency_injector.providers import (
-    Container,
-    Factory,
-)
+from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 
 from pulya.application import Application
-from pulya.containers import CoreRequestContainer
-from pulya.params import Body
+from pulya.containers import RequestContainer
+from pulya.headers import Headers
 from pulya.request import HttpRequest
 
 
@@ -31,20 +27,19 @@ class EchoBody(msgspec.Struct):
 
 
 def get_user_from_request(request: HttpRequest) -> str:
-    # print("Get user for example")
     return f"<User {request.path}>"
 
 
-class RequestContainer(DeclarativeContainer):
-    wiring_config = WiringConfiguration(
+class Container(containers.DeclarativeContainer):
+    wiring_config = containers.WiringConfiguration(
         modules=[__name__],
     )
 
-    core = Container(CoreRequestContainer)
-    user = Factory(get_user_from_request, request=core.request)
+    core = providers.Container(RequestContainer)
+    user = providers.Factory(get_user_from_request, request=core.request)
 
 
-app = Application(RequestContainer)
+app = Application(Container)
 
 
 @app.get("/")
@@ -55,15 +50,20 @@ async def index() -> dict[str, str]:
 @app.get("/test/{name}")
 @inject
 async def test(
-    user: Annotated[str, Provide[RequestContainer.user]],
+    user: Annotated[str, Provide[Container.user]],
     name: str,
-    headers: Annotated[list[tuple[str, str]], Provide["core.headers"]],
+    headers: Annotated[Headers, Provide[RequestContainer.headers]],
 ) -> dict[str, str]:
     return {"test": "ok", "user": user, "name": name, "headers": list(headers)}
 
 
 @app.post("/echo")
-async def echo(body: Annotated[EchoBody, Body()]) -> EchoBody:
+@inject
+async def echo(
+    body: Annotated[
+        EchoBody, Provide[RequestContainer.body.provided.deserialize.call(EchoBody)]
+    ],
+) -> EchoBody:
     return body
 
 

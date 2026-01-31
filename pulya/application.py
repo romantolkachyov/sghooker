@@ -18,20 +18,21 @@ from asgiref.typing import (
     Scope as ASGIScope,
 )
 from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.wiring import clear_cache
 
-from pulya.containers import CoreRequestContainer
+from pulya.containers import RequestContainer
 from pulya.request import ASGIHttpRequest, HttpRequest, RSGIHttpRequest
 from pulya.responses import Response
 from pulya.routing import Router
 from pulya.rsgi import HTTPProtocol, Scope
 
-RequestContainerT = TypeVar("RequestContainerT", bound=DeclarativeContainer)
+DIContainer = TypeVar("DIContainer", bound=DeclarativeContainer)
 
 
-class Application(Router, Generic[RequestContainerT]):
-    def __init__(self, request_container_class: type[RequestContainerT]) -> None:
+class Application(Router, Generic[DIContainer]):
+    def __init__(self, container_class: type[DIContainer]) -> None:
         super().__init__()
-        self.request_container_class = request_container_class
+        self.container_class = container_class
         self.container: DeclarativeContainer | None = None
         self.active_request: ContextVar[HttpRequest] = ContextVar("active_request")
         self._di_lock = threading.Lock()
@@ -52,17 +53,6 @@ class Application(Router, Generic[RequestContainerT]):
 
         handler_params = msgspec.structs.asdict(validated_path_params)
 
-        if route.body_arg_name and route.body_arg_schema:
-            body_content = await request.get_content()
-            if not body_content:
-                return Response(
-                    status=HTTPStatus.BAD_REQUEST,
-                    content=msgspec.json.encode({"error": "Body is required."}),
-                    headers=[],
-                )
-            handler_params[route.body_arg_name] = msgspec.json.decode(
-                body_content, type=route.body_arg_schema
-            )
         with self.active_request.set(request):
             return await route.handler(**handler_params)
 
@@ -151,15 +141,19 @@ class Application(Router, Generic[RequestContainerT]):
     def __rsgi_init__(self, loop: AbstractEventLoop) -> None:
         # dependency-inject is unstable in free-threading mode so creating container sequentially
         with self._di_lock:
-            self.container = self.request_container_class(
-                core=CoreRequestContainer(request_ctx=self.active_request)
-            )
+            core = RequestContainer(request_ctx=self.active_request)
+            self.container = self.container_class(core=core)
             self.container.check_dependencies()
             if fut := self.container.init_resources():
                 loop.run_until_complete(fut)
-            self.container.wire(warn_unresolved=True)
+            core.wiring_config = self.container.wiring_config
+            # DI package has incomplete typings. Will be fixed in the upcoming release
+            self.container.wire(keep_cache=True)  # type: ignore[call-arg]
+            core.wire(keep_cache=True)  # type: ignore[call-arg]
+            clear_cache()
 
     def __rsgi_del__(self, loop: AbstractEventLoop) -> None:
         with self._di_lock:
             if self.container and (fut := self.container.shutdown_resources()):
                 loop.run_until_complete(fut)
+            # clear_cache()

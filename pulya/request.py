@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 from http import HTTPMethod
+from typing import Protocol
 
 from asgiref.typing import ASGIReceiveCallable, HTTPScope
 
@@ -7,14 +7,18 @@ from pulya.headers import ASGIHeaders, Headers, RSGIHeaders
 from pulya.rsgi import HTTPProtocol, Scope
 
 
-class HttpRequest(ABC):
-    method: HTTPMethod
-    path: str
-    headers: Headers
+class HttpRequest(Protocol):
+    @property
+    def method(self) -> HTTPMethod: ...
 
-    @abstractmethod
+    @property
+    def path(self) -> str: ...
+
+    @property
+    def headers(self) -> Headers: ...
+
     async def get_content(self) -> bytes:
-        """Read all request body."""
+        """Read whole request body."""
         pass
 
 
@@ -25,10 +29,17 @@ class RSGIHttpRequest(HttpRequest):
         self._scope = scope
         self._protocol = protocol
 
-        self.method = HTTPMethod(scope.method)
-        self.path = scope.path
-        # FIXME: this is incorrect if we have multiple headers with same name
-        self.headers = RSGIHeaders(scope.headers)
+    @property
+    def method(self) -> HTTPMethod:
+        return HTTPMethod(self._scope.method)
+
+    @property
+    def path(self) -> str:
+        return self._scope.path
+
+    @property
+    def headers(self) -> Headers:
+        return RSGIHeaders(self._scope.headers)
 
     async def get_content(self) -> bytes:
         return await self._protocol()
@@ -41,9 +52,17 @@ class ASGIHttpRequest(HttpRequest):
         self._scope = scope
         self._receive = receive
 
-        self.method = HTTPMethod(scope["method"])
-        self.path = scope["path"]
-        self.headers = ASGIHeaders(scope["headers"])
+    @property
+    def method(self) -> HTTPMethod:
+        return HTTPMethod(self._scope["method"])
+
+    @property
+    def path(self) -> str:
+        return self._scope["path"]
+
+    @property
+    def headers(self) -> Headers:
+        return ASGIHeaders(self._scope["headers"])
 
     async def get_content(self) -> bytes:
         body = b""
