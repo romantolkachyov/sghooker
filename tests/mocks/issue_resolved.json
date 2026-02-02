@@ -1,0 +1,67 @@
+{
+  "action": "resolved",
+  "actor": {
+    "id": 10001,
+    "name": "dev.tester@example.com",
+    "type": "user"
+  },
+  "data": {
+    "issue": {
+      "annotations": [],
+      "assignedTo": null,
+      "count": "150",
+      "culprit": "app.database.connector in execute_query",
+      "firstSeen": "2026-01-01T09:00:00.000000Z",
+      "hasSeen": true,
+      "id": "1234567890",
+      "isBookmarked": false,
+      "isPublic": false,
+      "isSubscribed": false,
+      "isUnhandled": false,
+      "issueCategory": "error",
+      "issueType": "error",
+      "lastSeen": "2026-02-02T14:30:00.000000Z",
+      "level": "error",
+      "logger": "root",
+      "metadata": {
+        "filename": "app/services/database_manager.py",
+        "function": "connect_with_retry",
+        "in_app_frame_mix": "mixed",
+        "initial_priority": 80,
+        "sdk": {
+          "name": "sentry.python.fastapi",
+          "name_normalized": "sentry.python"
+        },
+        "title": null,
+        "type": "DatabaseConnectionError",
+        "value": "ConnectionTimeout[<Pool at 0x7f00d6163970 state=closed raised TimeoutError>]"
+      },
+      "numComments": 2,
+      "permalink": "https://example-org.sentry.io/issues/1234567890/",
+      "platform": "python",
+      "priority": "high",
+      "priorityLockedAt": null,
+      "project": {
+        "id": "987654321",
+        "name": "core-backend",
+        "platform": "python-fastapi",
+        "slug": "core-backend"
+      },
+      "seerAutofixLastTriggered": "2026-02-01T10:00:00.000000Z",
+      "seerFixabilityScore": 0.85,
+      "shareId": null,
+      "shortId": "PROD-A1",
+      "status": "resolved",
+      "statusDetails": {},
+      "subscriptionDetails": null,
+      "substatus": null,
+      "title": "DatabaseConnectionError: Connection timeout occurred during query execution",
+      "type": "error",
+      "userCount": 12
+    },
+    "resolution_type": "now"
+  },
+  "installation": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}

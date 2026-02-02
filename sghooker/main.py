@@ -10,10 +10,12 @@ from sghooker.chat_messages import (
 )
 from sghooker.containers import Container
 from sghooker.google_chat import send_message
-from sghooker.schemas.issue_alert import IssueAlertWebhookBody
-from sghooker.schemas.issue_created import IssueCreatedWebhookBody
-from sghooker.schemas.issue_resolved import IssueResolvedWebhookBody
-from sghooker.schemas.issue_unresolved import IssueUnresolvedWebhookBody
+from sghooker.schemas.alert_event import IssueAlertWebhookBody
+from sghooker.schemas.issue_event import (
+    IssueCreatedWebhookBody,
+    IssueResolvedWebhookBody,
+    IssueUnresolvedWebhookBody,
+)
 
 app = Pulya(Container)
 

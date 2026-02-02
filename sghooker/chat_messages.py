@@ -17,12 +17,16 @@ from card_framework.v2.widgets import (
     TextParagraph,
 )
 
-from sghooker.schemas.issue_alert import (
+from sghooker.schemas.alert_event import (
     ExceptionData,
     IssueAlertWebhookBody,
     StacktraceInfo,
 )
-from sghooker.schemas.issue_created import IssueCreatedWebhookBody
+from sghooker.schemas.issue_event import (
+    IssueCreatedWebhookBody,
+    IssueData,
+    IssueUnresolvedWebhookBody,
+)
 
 
 def _format_stack(stack_info: StacktraceInfo) -> list[DecoratedText]:
@@ -138,6 +142,29 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
     return Message(cards_v2=[card])
 
 
+def _issue_sections(issue: IssueData) -> list[Section]:
+    return [
+        Section(widgets=[TextParagraph(text=f"<b>culprit:</b> {issue.culprit}")]),
+        Section(widgets=[TextParagraph(text=issue.title, max_lines=4)]),
+        Section(
+            widgets=[
+                TextParagraph(
+                    text="&nbsp;&nbsp;".join(
+                        [
+                            f"Priority: <b>{issue.priority}</b>",
+                            f"Count: <b>{issue.count}</b>",
+                            f"Users: <b>{issue.user_count}</b>",
+                        ]
+                    )
+                )
+            ]
+        ),
+        Section(
+            widgets=[ButtonList(buttons=_issue_buttons(issue_url=issue.permalink))]
+        ),
+    ]
+
+
 def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
     issue = webhook.data.issue
     card = CardWithId(
@@ -147,25 +174,23 @@ def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
             image_url="https://romantolkachyov.github.io/sentry.png",
             image_type=ImageType.CIRCLE,
         ),
-        sections=[
-            Section(widgets=[TextParagraph(text=f"<b>culprit:</b> {issue.culprit}")]),
-            Section(widgets=[TextParagraph(text=issue.title, max_lines=4)]),
-            Section(
-                widgets=[
-                    TextParagraph(
-                        text="&nbsp;&nbsp;".join(
-                            [
-                                f"Priority: <b>{issue.priority}</b>",
-                                f"Count: <b>{issue.count}</b>",
-                                f"Users: <b>{issue.user_count}</b>",
-                            ]
-                        )
-                    )
-                ]
-            ),
-            Section(
-                widgets=[ButtonList(buttons=_issue_buttons(issue_url=issue.web_url))]
-            ),
-        ],
+        sections=_issue_sections(issue),
     )
     return Message(cards_v2=[card])
+
+
+def build_issue_unresolved_message(webhook: IssueUnresolvedWebhookBody) -> Message:
+    issue = webhook.data.issue
+    return Message(
+        cards_v2=[
+            CardWithId(
+                header=CardHeader(
+                    title=f"Issue unresolved ({issue.substatus})",
+                    subtitle=f"Project: {issue.project.name}",
+                    image_url="https://romantolkachyov.github.io/sentry.png",
+                    image_type=ImageType.CIRCLE,
+                ),
+                sections=_issue_sections(issue),
+            )
+        ]
+    )

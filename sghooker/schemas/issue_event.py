@@ -8,7 +8,7 @@ class ProjectData(msgspec.Struct):
 
 
 class IssueData(msgspec.Struct):
-    web_url: str
+    permalink: str
     title: str
     culprit: str
     logger: str
@@ -16,7 +16,7 @@ class IssueData(msgspec.Struct):
     # examples: unresolved, ...
     status: str
     # examples: new, ...
-    substatus: str
+    substatus: str | None
     project: ProjectData
     # examples: default, ...
     type: str
@@ -39,4 +39,20 @@ class BaseIssueWebhookBody(msgspec.Struct):
 
 
 class IssueCreatedWebhookBody(BaseIssueWebhookBody, tag="created", tag_field="action"):
+    pass
+
+
+class IssueResolvedWebhookBody(
+    BaseIssueWebhookBody, tag="resolved", tag_field="action"
+):
+    """Sentry issue resolved webhook body."""
+
+    pass
+
+
+class IssueUnresolvedWebhookBody(
+    BaseIssueWebhookBody, tag="unresolved", tag_field="action"
+):
+    """Sentry issue unresolved webhook body."""
+
     pass

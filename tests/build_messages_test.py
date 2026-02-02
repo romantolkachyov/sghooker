@@ -6,9 +6,14 @@ from polyfactory.factories.msgspec_factory import MsgspecFactory
 from sghooker.chat_messages import (
     build_issue_alert_message,
     build_issue_created_message,
+    build_issue_unresolved_message,
 )
-from sghooker.schemas.issue_alert import IssueAlertWebhookBody
-from sghooker.schemas.issue_created import IssueCreatedWebhookBody
+from sghooker.schemas.alert_event import IssueAlertWebhookBody
+from sghooker.schemas.issue_event import (
+    IssueCreatedWebhookBody,
+    IssueResolvedWebhookBody,
+    IssueUnresolvedWebhookBody,
+)
 
 MOCKS_DIR = Path(__file__).parent / "mocks"
 
@@ -41,6 +46,19 @@ def test_build_issue_created_message_from_example() -> None:
         msg = msgspec.json.decode(fp.read(), type=IssueCreatedWebhookBody)
     result = build_issue_created_message(msg)
     print("Created: ", msgspec.json.encode(result.render()).decode())
+
+
+def test_build_issue_resolved_message_from_example() -> None:
+    # There is no message for issue_created event, just to check schema
+    with open(MOCKS_DIR / "issue_resolved.json") as fp:
+        msgspec.json.decode(fp.read(), type=IssueResolvedWebhookBody)
+
+
+async def test_build_issue_unresolved_message_from_example() -> None:
+    # There is no message for issue_created event, just to check schema
+    with open(MOCKS_DIR / "real" / "issue_unresolved.json") as fp:
+        msg = msgspec.json.decode(fp.read(), type=IssueUnresolvedWebhookBody)
+    build_issue_unresolved_message(msg)
 
 
 # async def test_send_message():

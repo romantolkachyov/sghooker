@@ -1,0 +1,66 @@
+{
+  "action": "unresolved",
+  "actor": {
+    "id": "sentry",
+    "name": "Sentry",
+    "type": "application"
+  },
+  "data": {
+    "issue": {
+      "annotations": [],
+      "assignedTo": null,
+      "count": "6199",
+      "culprit": "app.database.connector in execute_query",
+      "firstSeen": "2025-11-19T16:39:08.942074Z",
+      "hasSeen": false,
+      "id": "1234567890",
+      "isBookmarked": false,
+      "isPublic": false,
+      "isSubscribed": false,
+      "isUnhandled": false,
+      "issueCategory": "error",
+      "issueType": "error",
+      "lastSeen": "2026-01-29T21:51:53.617930Z",
+      "level": "error",
+      "logger": "root",
+      "metadata": {
+        "filename": "app/services/database_manager.py",
+        "function": "connect_with_retry",
+        "in_app_frame_mix": "mixed",
+        "initial_priority": 80,
+        "sdk": {
+          "name": "sentry.python.fastapi",
+          "name_normalized": "sentry.python"
+        },
+        "title": null,
+        "type": "DatabaseConnectionError",
+        "value": "ConnectionTimeout[<Pool at 0x7fd678f11d50 state=closed raised TimeoutError>]"
+      },
+      "numComments": 1,
+      "permalink": "https://example-org.sentry.io/issues/1234567890/",
+      "platform": "python",
+      "priority": "high",
+      "priorityLockedAt": null,
+      "project": {
+        "id": "987654321",
+        "name": "core-backend",
+        "platform": "python-fastapi",
+        "slug": "core-backend"
+      },
+      "seerAutofixLastTriggered": null,
+      "seerFixabilityScore": null,
+      "shareId": null,
+      "shortId": "PROD-A1",
+      "status": "unresolved",
+      "statusDetails": {},
+      "subscriptionDetails": null,
+      "substatus": "regressed",
+      "title": "DatabaseConnectionError: Connection timeout occurred during query execution",
+      "type": "error",
+      "userCount": 0
+    }
+  },
+  "installation": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
