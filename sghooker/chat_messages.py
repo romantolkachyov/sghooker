@@ -18,8 +18,8 @@ from card_framework.v2.widgets import (
 )
 
 from sghooker.schemas.alert_event import (
+    AlertEventWebhookBody,
     ExceptionData,
-    IssueAlertWebhookBody,
     StacktraceInfo,
 )
 from sghooker.schemas.issue_event import (
@@ -95,7 +95,7 @@ def _issue_buttons(
     return buttons
 
 
-def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
+def build_alert_event_message(webhook: AlertEventWebhookBody) -> Message:
     event = webhook.data.event
     card = CardWithId(
         header=CardHeader(

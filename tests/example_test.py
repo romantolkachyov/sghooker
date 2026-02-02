@@ -38,7 +38,7 @@ async def test_example(client: TestClient) -> None:
 
 
 @patch("sghooker.main.send_message", AsyncMock(status_code=200))
-async def test_issue_alert_webhook(client: TestClient) -> None:
+async def test_alert_event_webhook(client: TestClient) -> None:
     async with await open_file(MOCKS_DIR / "alert_triggered.json") as fp:
         data = await fp.read()
     r = await client.post("/inbox/sentry/", content=data)

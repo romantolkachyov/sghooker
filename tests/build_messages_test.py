@@ -4,11 +4,11 @@ import msgspec.json
 from polyfactory.factories.msgspec_factory import MsgspecFactory
 
 from sghooker.chat_messages import (
-    build_issue_alert_message,
+    build_alert_event_message,
     build_issue_created_message,
     build_issue_unresolved_message,
 )
-from sghooker.schemas.alert_event import IssueAlertWebhookBody
+from sghooker.schemas.alert_event import AlertEventWebhookBody
 from sghooker.schemas.issue_event import (
     IssueCreatedWebhookBody,
     IssueResolvedWebhookBody,
@@ -18,21 +18,21 @@ from sghooker.schemas.issue_event import (
 MOCKS_DIR = Path(__file__).parent / "mocks"
 
 
-class IssueAlertWebhookBodyFactory(MsgspecFactory[IssueAlertWebhookBody]): ...
+class AlertEventWebhookBodyFactory(MsgspecFactory[AlertEventWebhookBody]): ...
 
 
 class IssueCreatedWebhookBodyFactory(MsgspecFactory[IssueCreatedWebhookBody]): ...
 
 
-def test_build_issue_alert_message() -> None:
-    result = build_issue_alert_message(IssueAlertWebhookBodyFactory.build())
+def test_build_alert_event_message() -> None:
+    result = build_alert_event_message(AlertEventWebhookBodyFactory.build())
     print("Alert: ", msgspec.json.encode(result.render()).decode())
 
 
-def test_build_issue_alert_message_from_example() -> None:
+def test_build_alert_event_message_from_example() -> None:
     with open(MOCKS_DIR / "alert_triggered.json") as fp:
-        msg = msgspec.json.decode(fp.read(), type=IssueAlertWebhookBody)
-    result = build_issue_alert_message(msg)
+        msg = msgspec.json.decode(fp.read(), type=AlertEventWebhookBody)
+    result = build_alert_event_message(msg)
     print("Alert: ", msgspec.json.encode(result.render()).decode())
 
 

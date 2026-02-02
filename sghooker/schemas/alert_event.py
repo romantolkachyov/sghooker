@@ -22,7 +22,7 @@ class EventException(msgspec.Struct):
     values: list[ExceptionData]
 
 
-class IssueAlertEvent(msgspec.Struct):
+class AlertEvent(msgspec.Struct):
     message: str
     culprit: str
     issue_url: str
@@ -35,15 +35,15 @@ class IssueAlertEvent(msgspec.Struct):
     exception: EventException | None = None
 
 
-class IssueAlertData(msgspec.Struct):
-    event: IssueAlertEvent
+class AlertEventData(msgspec.Struct):
+    event: AlertEvent
     triggered_rule: str
 
 
-class IssueAlertWebhookBody(msgspec.Struct, tag="triggered", tag_field="action"):
+class AlertEventWebhookBody(msgspec.Struct, tag="triggered", tag_field="action"):
     """Sentry issue alert webhook body.
 
     https://docs.sentry.io/organization/integrations/integration-platform/webhooks/issue-alerts/
     """
 
-    data: IssueAlertData
+    data: AlertEventData
