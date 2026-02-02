@@ -45,13 +45,6 @@ def test_build_issue_created_message_from_example() -> None:
     print("Created: ", msgspec.json.encode(result.render()).decode())
 
 
-def test_build_issue_resolved_message_from_example() -> None:
-    with open(MOCKS_DIR / "real" / "issue_resolved.json") as fp:
-        msg = msgspec.json.decode(fp.read(), type=IssueResolvedWebhookBody)
-    # result = build_issue_created_message(msg)
-    # print("Created: ", msgspec.json.encode(result.render()).decode())
-
-
 # async def test_send_message():
 #     result = build_issue_alert_message(IssueAlertWebhookBodyFactory.build())
 #     await send_message(result.render())
