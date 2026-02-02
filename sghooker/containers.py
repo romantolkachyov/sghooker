@@ -8,7 +8,7 @@ class AppContainer(containers.DeclarativeContainer):
 
 
 def get_sentry_header(headers: Headers) -> str | None:
-    return headers.get("x-sentry-resource", "Unknown")
+    return headers.get("Sentry-Hook-Resource", "Unknown")
 
 
 class Container(containers.DeclarativeContainer):

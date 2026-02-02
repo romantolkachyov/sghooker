@@ -9,6 +9,8 @@ from sghooker.chat_messages import (
 )
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
+from sghooker.schemas.issue_resolved import IssueResolvedWebhookBody
+from sghooker.schemas.issue_unresolved import IssueUnresolvedWebhookBody
 
 MOCKS_DIR = Path(__file__).parent / "mocks"
 
@@ -41,6 +43,13 @@ def test_build_issue_created_message_from_example() -> None:
         msg = msgspec.json.decode(fp.read(), type=IssueCreatedWebhookBody)
     result = build_issue_created_message(msg)
     print("Created: ", msgspec.json.encode(result.render()).decode())
+
+
+def test_build_issue_resolved_message_from_example() -> None:
+    with open(MOCKS_DIR / "real" / "issue_resolved.json") as fp:
+        msg = msgspec.json.decode(fp.read(), type=IssueResolvedWebhookBody)
+    # result = build_issue_created_message(msg)
+    # print("Created: ", msgspec.json.encode(result.render()).decode())
 
 
 # async def test_send_message():
