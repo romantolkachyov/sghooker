@@ -16,14 +16,14 @@ class SdkInfo(msgspec.Struct):
 
 
 class IssueMetadata(msgspec.Struct):
-    value: str
     type: str
-    filename: str
-    function: str
-    in_app_frame_mix: str
-    initial_priority: int
+    filename: str | None = None
+    function: str | None = None
+    in_app_frame_mix: str | None = None
+    initial_priority: int | None = None
     sdk: SdkInfo | None = None
     title: str | None = None
+    value: str | None = None
 
 
 class IssueInfo(msgspec.Struct):
