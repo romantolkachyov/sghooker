@@ -12,18 +12,28 @@ from sghooker.containers import Container
 from sghooker.google_chat import send_message
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
+from sghooker.schemas.issue_resolved import IssueResolvedWebhookBody
+from sghooker.schemas.issue_unresolved import IssueUnresolvedWebhookBody
 
 app = Pulya(Container)
 
 logger = logging.getLogger("sghooker")
+
+WebHookBodyUnion = (
+    IssueAlertWebhookBody
+    | IssueCreatedWebhookBody
+    | IssueResolvedWebhookBody
+    | IssueUnresolvedWebhookBody
+    | None
+)
 
 
 @app.post("/inbox/sentry/")
 @inject
 async def receive_webhook(
     body: Annotated[
-        IssueAlertWebhookBody | IssueCreatedWebhookBody | None,
-        Body(IssueAlertWebhookBody | IssueCreatedWebhookBody | None),
+        WebHookBodyUnion,
+        Body(WebHookBodyUnion),
     ],
     sentry_resource: Annotated[str | None, Header("Sentry-Hook-Resource")],
 ) -> dict[str, Any]:

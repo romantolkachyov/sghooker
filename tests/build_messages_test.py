@@ -9,8 +9,6 @@ from sghooker.chat_messages import (
 )
 from sghooker.schemas.issue_alert import IssueAlertWebhookBody
 from sghooker.schemas.issue_created import IssueCreatedWebhookBody
-from sghooker.schemas.issue_resolved import IssueResolvedWebhookBody
-from sghooker.schemas.issue_unresolved import IssueUnresolvedWebhookBody
 
 MOCKS_DIR = Path(__file__).parent / "mocks"
 
