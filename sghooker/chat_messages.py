@@ -53,28 +53,42 @@ def _exception_to_widgets(exception: ExceptionData) -> list[Widget]:
     ]
 
 
-def _issue_buttons() -> list[Button]:
-    return [
+def _issue_buttons(
+    issue_url: str,
+    namespace: str | None = None,
+    service_name: str | None = None,
+    trace_id: str | None = None,
+) -> list[Button]:
+    buttons = [
         Button(
-            text="Open",
-            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
-        ),
-        Button(
-            text="Dashboard",
-            type_=Button.Type.BORDERLESS,
-            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
-        ),
-        Button(
-            text="Logs",
-            type_=Button.Type.BORDERLESS,
-            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
-        ),
-        Button(
-            text="Jump to trace",
-            type_=Button.Type.BORDERLESS,
-            on_click=OnClick(open_link=OpenLink(url="https://sentry.io")),
-        ),
+            text="Open sentry.io",
+            on_click=OnClick(open_link=OpenLink(url=issue_url)),
+        )
     ]
+    if namespace and service_name:
+        buttons.extend(
+            [
+                Button(
+                    text="Dashboard",
+                    type_=Button.Type.BORDERLESS,
+                    on_click=OnClick(open_link=OpenLink(url="about:blank")),
+                ),
+                Button(
+                    text="Logs",
+                    type_=Button.Type.BORDERLESS,
+                    on_click=OnClick(open_link=OpenLink(url="about:blank")),
+                ),
+            ]
+        )
+    if trace_id:
+        buttons.append(
+            Button(
+                text="Jump to trace",
+                type_=Button.Type.BORDERLESS,
+                on_click=OnClick(open_link=OpenLink(url="about:blank")),
+            )
+        )
+    return buttons
 
 
 def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
@@ -116,7 +130,9 @@ def build_issue_alert_message(webhook: IssueAlertWebhookBody) -> Message:
                     )
                 ]
             ),
-            Section(widgets=[ButtonList(buttons=_issue_buttons())]),
+            Section(
+                widgets=[ButtonList(buttons=_issue_buttons(issue_url=event.web_url))]
+            ),
         ],
     )
     return Message(cards_v2=[card])
@@ -147,7 +163,9 @@ def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:
                     )
                 ]
             ),
-            Section(widgets=[ButtonList(buttons=_issue_buttons())]),
+            Section(
+                widgets=[ButtonList(buttons=_issue_buttons(issue_url=issue.web_url))]
+            ),
         ],
     )
     return Message(cards_v2=[card])

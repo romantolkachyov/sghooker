@@ -26,6 +26,7 @@ class IssueAlertEvent(msgspec.Struct):
     message: str
     culprit: str
     issue_url: str
+    web_url: str
     level: str
     title: str
     tags: list[tuple[str, str]]
