@@ -1,23 +1,24 @@
+[dependency-groups]
+dev = [
+  "mypy>=1.19.1",
+  "polyfactory>=3.2.0",
+  "pre-commit>=4.5.1",
+  "pytest>=9.0.2",
+  "pytest-asyncio>=1.3.0",
+  "ruff>=0.14.14"
+]
+
 [project]
 name = "sghooker"
-version = "0.2.2"
+version = "0.2.3"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "granian>=2.6.1",
-    "pulya>=0.1.0",
-    "python-card-framework>=2.4.0",
-    "uvloop>=0.22.1",
-]
-
-[dependency-groups]
-dev = [
-    "mypy>=1.19.1",
-    "polyfactory>=3.2.0",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "ruff>=0.14.14",
+  "granian>=2.6.1",
+  "pulya>=0.1.0",
+  "python-card-framework>=2.4.0",
+  "uvloop>=0.22.1"
 ]
 
 [tool.mypy]
@@ -27,7 +28,7 @@ packages = ['sghooker', 'tests']
 
 [[tool.mypy.overrides]]
 module = [
-    'card_framework.*',
+  'card_framework.*'
 ]
 ignore_missing_imports = true
 follow_untyped_imports = true

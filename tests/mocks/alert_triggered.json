@@ -135,8 +135,8 @@
       "hashes": [
         "29f7ffc4903a8a990408b80a3b4c95a2"
       ],
-      "issue_url": "https://sentry.io/api/0/issues/1117540176/",
       "issue_id": "1117540176",
+      "issue_url": "https://sentry.io/api/0/issues/1117540176/",
       "key_id": "667532",
       "level": "error",
       "location": "<anonymous>",
@@ -235,16 +235,16 @@
       "version": "7",
       "web_url": "https://sentry.io/organizations/test-org/issues/1117540176/events/e4874d664c3540c1a32eab185f12c5ab/"
     },
-    "triggered_rule": "Very Important Alert Rule!",
     "issue_alert": {
-      "title": "Very Important Alert Rule!",
       "settings": [
         {
           "name": "channel",
           "value": "#general"
         }
-      ]
-    }
+      ],
+      "title": "Very Important Alert Rule!"
+    },
+    "triggered_rule": "Very Important Alert Rule!"
   },
   "installation": {
     "uuid": "a8e5d37a-696c-4c54-adb5-b3f28d64c7de"
