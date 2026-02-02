@@ -1,9 +1,13 @@
+import logging
 import os
+from http import HTTPStatus
 from typing import Any
 
 import httpx
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
+logger = logging.getLogger(__name__)
 
 
 async def send_message(message_data: dict[str, Any]) -> None:
@@ -14,4 +18,7 @@ async def send_message(message_data: dict[str, Any]) -> None:
             WEBHOOK_URL,
             json=message_data,
         )
-        print("Status: ", resp.status_code, "\nContent:", resp.content)
+        if resp.status_code != HTTPStatus.OK:
+            logger.error(
+                "Failed to send message to google chat. Response: %s", resp.content
+            )
