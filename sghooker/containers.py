@@ -1,3 +1,5 @@
+import os
+
 from dependency_injector import containers, providers
 from pulya.containers import RequestContainer
 from pulya.headers import Headers
@@ -17,5 +19,7 @@ class Container(containers.DeclarativeContainer):
     )
 
     request = providers.Container(RequestContainer)
+
+    grafana_url_template = providers.Object(os.getenv("GRAFANA_URL_TEMPLATE"))
 
     sentry_resource_header = providers.Factory(get_sentry_header, request.headers)

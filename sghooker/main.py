@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Any
 
-from dependency_injector.wiring import inject
+from dependency_injector.wiring import Provide, inject
 from pulya import Body, Header, Pulya
 
 from sghooker.chat_messages import (
@@ -38,9 +38,14 @@ async def receive_webhook(
         Body(WebHookBodyUnion),
     ],
     sentry_resource: Annotated[str | None, Header("Sentry-Hook-Resource")],
+    grafana_url_template: Annotated[
+        str | None, Provide[Container.grafana_url_template]
+    ] = None,
 ) -> dict[str, Any]:
     if isinstance(body, AlertEventWebhookBody):
-        result = build_alert_event_message(body)
+        result = build_alert_event_message(
+            body, grafana_url_template=grafana_url_template
+        )
         await send_message(dict(result.render()))
     elif isinstance(body, IssueCreatedWebhookBody):
         result = build_issue_created_message(body)

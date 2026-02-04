@@ -36,6 +36,28 @@ def test_build_alert_event_message_from_example() -> None:
     print("Alert: ", msgspec.json.encode(result.render()).decode())
 
 
+def test_build_alert_event_message_with_grafana_url() -> None:
+    with open(MOCKS_DIR / "alert_triggered.json") as fp:
+        msg = msgspec.json.decode(fp.read(), type=AlertEventWebhookBody)
+    # Add required tags to the mock data if they are missing
+    msg.data.event.tags.append(("namespace", "my-ns"))
+    msg.data.event.tags.append(("service_name", "my-svc"))
+
+    template = 'https://grafana.example.com/explore?left=["now-1h","now","Loki",{"expr":"{{namespace=\'{namespace}\',service_name=\'{service_name}\'}}"}]'
+    result = build_alert_event_message(msg, grafana_url_template=template)
+    rendered = result.render()
+
+    # Find the Logs button in the rendered card
+    buttons = rendered["cardsV2"][0]["card"]["sections"][-1]["widgets"][0][
+        "buttonList"
+    ]["buttons"]
+    logs_button = next(b for b in buttons if b["text"] == "Logs")
+    expected_url = template.replace("{namespace}", "my-ns").replace(
+        "{service_name}", "my-svc"
+    )
+    assert logs_button["onClick"]["openLink"]["url"] == expected_url
+
+
 def test_build_issue_created_message() -> None:
     result = build_issue_created_message(IssueCreatedWebhookBodyFactory.build())
     print("Created: ", msgspec.json.encode(result.render()).decode())

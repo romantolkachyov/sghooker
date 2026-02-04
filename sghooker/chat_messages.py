@@ -29,6 +29,13 @@ from sghooker.schemas.issue_event import (
 )
 
 
+def _get_tag_value(tags: list[tuple[str, str]], key: str) -> str | None:
+    for k, v in tags:
+        if k == key:
+            return v
+    return None
+
+
 def _format_stack(stack_info: StacktraceInfo) -> list[DecoratedText]:
     # data = ["<pre><code>"]
     data = []
@@ -62,6 +69,7 @@ def _issue_buttons(
     namespace: str | None = None,
     service_name: str | None = None,
     trace_id: str | None = None,
+    logs_url: str | None = None,
 ) -> list[Button]:
     buttons = [
         Button(
@@ -70,20 +78,21 @@ def _issue_buttons(
         )
     ]
     if namespace and service_name:
-        buttons.extend(
-            [
-                Button(
-                    text="Dashboard",
-                    type_=Button.Type.BORDERLESS,
-                    on_click=OnClick(open_link=OpenLink(url="about:blank")),
-                ),
+        buttons.append(
+            Button(
+                text="Dashboard",
+                type_=Button.Type.BORDERLESS,
+                on_click=OnClick(open_link=OpenLink(url="about:blank")),
+            )
+        )
+        if logs_url:
+            buttons.append(
                 Button(
                     text="Logs",
                     type_=Button.Type.BORDERLESS,
-                    on_click=OnClick(open_link=OpenLink(url="about:blank")),
-                ),
-            ]
-        )
+                    on_click=OnClick(open_link=OpenLink(url=logs_url)),
+                )
+            )
     if trace_id:
         buttons.append(
             Button(
@@ -95,8 +104,18 @@ def _issue_buttons(
     return buttons
 
 
-def build_alert_event_message(webhook: AlertEventWebhookBody) -> Message:
+def build_alert_event_message(
+    webhook: AlertEventWebhookBody, grafana_url_template: str | None = None
+) -> Message:
     event = webhook.data.event
+    namespace = _get_tag_value(event.tags, "namespace")
+    service_name = _get_tag_value(event.tags, "service_name")
+    logs_url = None
+    if grafana_url_template and namespace and service_name:
+        logs_url = grafana_url_template.replace("{namespace}", namespace).replace(
+            "{service_name}", service_name
+        )
+
     card = CardWithId(
         header=CardHeader(
             title=event.title,
@@ -135,7 +154,16 @@ def build_alert_event_message(webhook: AlertEventWebhookBody) -> Message:
                 ]
             ),
             Section(
-                widgets=[ButtonList(buttons=_issue_buttons(issue_url=event.web_url))]
+                widgets=[
+                    ButtonList(
+                        buttons=_issue_buttons(
+                            issue_url=event.web_url,
+                            namespace=namespace,
+                            service_name=service_name,
+                            logs_url=logs_url,
+                        )
+                    )
+                ]
             ),
         ],
     )
