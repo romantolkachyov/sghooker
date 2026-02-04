@@ -1,3 +1,5 @@
+"""Main application module with webhook endpoints."""
+
 import logging
 from typing import Annotated, Any
 
@@ -22,11 +24,7 @@ app = Pulya(Container)
 logger = logging.getLogger("sghooker")
 
 WebHookBodyUnion = (
-    AlertEventWebhookBody
-    | IssueCreatedWebhookBody
-    | IssueResolvedWebhookBody
-    | IssueUnresolvedWebhookBody
-    | None
+    AlertEventWebhookBody | IssueCreatedWebhookBody | IssueResolvedWebhookBody | IssueUnresolvedWebhookBody | None
 )
 
 
@@ -39,12 +37,26 @@ async def receive_webhook(
     ],
     sentry_resource: Annotated[str | None, Header("Sentry-Hook-Resource")],
     grafana_url_template: Annotated[
-        str | None, Provide[Container.grafana_url_template]
+        str | None,
+        Provide[Container.grafana_url_template],
     ] = None,
 ) -> dict[str, Any]:
+    """Receive and process Sentry webhooks.
+
+    Args:
+        body: The webhook body payload.
+        sentry_resource: The Sentry-Hook-Resource header (unused but validated).
+        grafana_url_template: Optional Grafana URL template for log links.
+
+    Returns:
+        A dictionary indicating success or failure.
+
+    """
+    del sentry_resource  # Unused but validated by the header check
     if isinstance(body, AlertEventWebhookBody):
         result = build_alert_event_message(
-            body, grafana_url_template=grafana_url_template
+            body,
+            grafana_url_template=grafana_url_template,
         )
         await send_message(dict(result.render()))
     elif isinstance(body, IssueCreatedWebhookBody):
@@ -58,14 +70,32 @@ async def receive_webhook(
 
 @app.get("/")
 async def index() -> dict[str, str]:
+    """Return basic app information.
+
+    Returns:
+        A dictionary with the app name.
+
+    """
     return {"app": "sghooker"}
 
 
 @app.get("/healthcheck")
 async def healthcheck() -> dict[str, bool]:
+    """Return health check status.
+
+    Returns:
+        A dictionary indicating the service is healthy.
+
+    """
     return {"success": True}
 
 
 @app.get("/readiness")
 async def readiness() -> dict[str, bool]:
+    """Return readiness check status.
+
+    Returns:
+        A dictionary indicating the service is ready.
+
+    """
     return {"success": True}

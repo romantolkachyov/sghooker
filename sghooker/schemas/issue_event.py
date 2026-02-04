@@ -1,13 +1,19 @@
+"""Issue event schema models for Sentry webhook payloads."""
+
 import msgspec
 from msgspec import field
 
 
 class ProjectData(msgspec.Struct):
+    """Data about a Sentry project."""
+
     name: str
     slug: str
 
 
 class IssueData(msgspec.Struct):
+    """Data about a Sentry issue."""
+
     permalink: str
     title: str
     culprit: str
@@ -31,28 +37,32 @@ class IssueData(msgspec.Struct):
 
 
 class IssueWebhookData(msgspec.Struct):
+    """Data payload for an issue webhook."""
+
     issue: IssueData
 
 
 class BaseIssueWebhookBody(msgspec.Struct):
+    """Base class for issue webhook bodies."""
+
     data: IssueWebhookData
 
 
 class IssueCreatedWebhookBody(BaseIssueWebhookBody, tag="created", tag_field="action"):
-    pass
+    """Sentry issue created webhook body."""
 
 
 class IssueResolvedWebhookBody(
-    BaseIssueWebhookBody, tag="resolved", tag_field="action"
+    BaseIssueWebhookBody,
+    tag="resolved",
+    tag_field="action",
 ):
     """Sentry issue resolved webhook body."""
 
-    pass
-
 
 class IssueUnresolvedWebhookBody(
-    BaseIssueWebhookBody, tag="unresolved", tag_field="action"
+    BaseIssueWebhookBody,
+    tag="unresolved",
+    tag_field="action",
 ):
     """Sentry issue unresolved webhook body."""
-
-    pass

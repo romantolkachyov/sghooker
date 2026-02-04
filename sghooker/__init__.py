@@ -1,0 +1,1 @@
+"""Sentry webhook handler package."""

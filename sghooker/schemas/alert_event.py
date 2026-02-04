@@ -1,7 +1,11 @@
+"""Alert event schema models for Sentry webhook payloads."""
+
 import msgspec
 
 
 class FrameInfo(msgspec.Struct):
+    """Information about a single frame in a stack trace."""
+
     abs_path: str
     in_app: bool
     lineno: int
@@ -9,20 +13,28 @@ class FrameInfo(msgspec.Struct):
 
 
 class StacktraceInfo(msgspec.Struct):
+    """Information about a stack trace."""
+
     frames: list[FrameInfo]
 
 
 class ExceptionData(msgspec.Struct):
+    """Data about an exception including type, value, and stacktrace."""
+
     type: str
     value: str
     stacktrace: StacktraceInfo
 
 
 class EventException(msgspec.Struct):
+    """Container for multiple exception values."""
+
     values: list[ExceptionData]
 
 
 class AlertEvent(msgspec.Struct):
+    """An alert event from Sentry."""
+
     message: str
     culprit: str
     issue_url: str
@@ -36,6 +48,8 @@ class AlertEvent(msgspec.Struct):
 
 
 class AlertEventData(msgspec.Struct):
+    """Data payload for an alert event webhook."""
+
     event: AlertEvent
     triggered_rule: str
 
