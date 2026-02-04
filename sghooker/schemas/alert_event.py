@@ -32,6 +32,57 @@ class EventException(msgspec.Struct):
     values: list[ExceptionData]
 
 
+class TraceContext(msgspec.Struct):
+    """Trace context information."""
+
+    trace_id: str | None = None
+    otel_trace_id: str | None = None
+    span_id: str | None = None
+    status: str | None = None
+    type: str | None = None
+
+
+class Contexts(msgspec.Struct):
+    """Event contexts."""
+
+    trace: TraceContext | None = None
+
+
+class BreadcrumbData(msgspec.Struct):
+    """Data within a breadcrumb."""
+
+    otel_trace_id: str | None = msgspec.field(name="otelTraceID", default=None)
+    otel_span_id: str | None = msgspec.field(name="otelSpanID", default=None)
+
+
+class Breadcrumb(msgspec.Struct):
+    """A single breadcrumb entry."""
+
+    data: BreadcrumbData | None = None
+
+
+class Breadcrumbs(msgspec.Struct):
+    """Container for breadcrumb values (top-level breadcrumbs field)."""
+
+    values: list[Breadcrumb] | None = None
+
+
+class MetaBreadcrumbValues(msgspec.Struct):
+    """Values within _meta.breadcrumbs (dict structure for metadata)."""
+
+
+class MetaBreadcrumbs(msgspec.Struct):
+    """Container for breadcrumb metadata in _meta field."""
+
+    values: dict[str, MetaBreadcrumbValues] | None = None
+
+
+class Meta(msgspec.Struct):
+    """Event metadata."""
+
+    breadcrumbs: MetaBreadcrumbs | None = None
+
+
 class AlertEvent(msgspec.Struct):
     """An alert event from Sentry."""
 
@@ -45,6 +96,9 @@ class AlertEvent(msgspec.Struct):
     release: str | None = None
     environment: str | None = None
     exception: EventException | None = None
+    contexts: Contexts | None = None
+    breadcrumbs: Breadcrumbs | None = None
+    _meta: Meta | None = None
 
 
 class AlertEventData(msgspec.Struct):

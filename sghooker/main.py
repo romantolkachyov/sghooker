@@ -40,6 +40,10 @@ async def receive_webhook(
         str | None,
         Provide[Container.grafana_url_template],
     ] = None,
+    tracing_url_template: Annotated[
+        str | None,
+        Provide[Container.tracing_url_template],
+    ] = None,
 ) -> dict[str, Any]:
     """Receive and process Sentry webhooks.
 
@@ -47,6 +51,7 @@ async def receive_webhook(
         body: The webhook body payload.
         sentry_resource: The Sentry-Hook-Resource header (unused but validated).
         grafana_url_template: Optional Grafana URL template for log links.
+        tracing_url_template: Optional tracing URL template for trace links.
 
     Returns:
         A dictionary indicating success or failure.
@@ -57,6 +62,7 @@ async def receive_webhook(
         result = build_alert_event_message(
             body,
             grafana_url_template=grafana_url_template,
+            tracing_url_template=tracing_url_template,
         )
         await send_message(dict(result.render()))
     elif isinstance(body, IssueCreatedWebhookBody):

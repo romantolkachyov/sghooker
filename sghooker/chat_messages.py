@@ -95,7 +95,7 @@ def _issue_buttons(
     issue_url: str,
     namespace: str | None = None,
     service_name: str | None = None,
-    trace_id: str | None = None,
+    trace_url: str | None = None,
     logs_url: str | None = None,
 ) -> list[Button]:
     """Create a list of buttons for an issue.
@@ -104,7 +104,7 @@ def _issue_buttons(
         issue_url: The URL to the issue in Sentry.
         namespace: The namespace of the service (optional).
         service_name: The name of the service (optional).
-        trace_id: The trace ID (optional).
+        trace_url: The trace URL (optional).
         logs_url: The URL to the logs (optional).
 
     Returns:
@@ -125,20 +125,20 @@ def _issue_buttons(
                 on_click=OnClick(open_link=OpenLink(url="about:blank")),
             ),
         )
-        if logs_url:
-            buttons.append(
-                Button(
-                    text="Logs",
-                    type_=Button.Type.BORDERLESS,
-                    on_click=OnClick(open_link=OpenLink(url=logs_url)),
-                ),
-            )
-    if trace_id:
+    if logs_url:
         buttons.append(
             Button(
-                text="Jump to trace",
+                text="Logs",
                 type_=Button.Type.BORDERLESS,
-                on_click=OnClick(open_link=OpenLink(url="about:blank")),
+                on_click=OnClick(open_link=OpenLink(url=logs_url)),
+            ),
+        )
+    if trace_url:
+        buttons.append(
+            Button(
+                text="View Trace",
+                type_=Button.Type.BORDERLESS,
+                on_click=OnClick(open_link=OpenLink(url=trace_url)),
             ),
         )
     return buttons
@@ -147,12 +147,14 @@ def _issue_buttons(
 def build_alert_event_message(
     webhook: AlertEventWebhookBody,
     grafana_url_template: str | None = None,
+    tracing_url_template: str | None = None,
 ) -> Message:
     """Build a Google Chat message from an alert event webhook.
 
     Args:
         webhook: The alert event webhook body.
         grafana_url_template: Optional Grafana URL template for log links.
+        tracing_url_template: Optional tracing URL template for trace links.
 
     Returns:
         A Google Chat message with the alert details.
@@ -161,11 +163,30 @@ def build_alert_event_message(
     event = webhook.data.event
     namespace = _get_tag_value(event.tags, "namespace")
     service_name = _get_tag_value(event.tags, "service_name")
+
+    # Extract trace_id from breadcrumbs or fallback to tags
+    trace_id = None
+    if event.breadcrumbs and event.breadcrumbs.values:
+        for breadcrumb in event.breadcrumbs.values:
+            if breadcrumb.data and breadcrumb.data.otel_trace_id:
+                trace_id = breadcrumb.data.otel_trace_id
+                break
+    if not trace_id:
+        trace_id = _get_tag_value(event.tags, "otelTraceID")
+
     logs_url = None
     if grafana_url_template and namespace and service_name:
         logs_url = grafana_url_template.replace("{namespace}", namespace).replace(
             "{service_name}",
             service_name,
+        )
+
+    trace_url = None
+    if tracing_url_template and trace_id:
+        trace_url = (
+            tracing_url_template.replace("{trace_id}", trace_id)
+            .replace("{namespace}", namespace or "")
+            .replace("{service_name}", service_name or "")
         )
 
     card = CardWithId(
@@ -209,6 +230,7 @@ def build_alert_event_message(
                             issue_url=event.web_url,
                             namespace=namespace,
                             service_name=service_name,
+                            trace_url=trace_url,
                             logs_url=logs_url,
                         ),
                     ),

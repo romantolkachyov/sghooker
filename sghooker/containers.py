@@ -35,4 +35,6 @@ class Container(containers.DeclarativeContainer):
 
     grafana_url_template = providers.Object(os.getenv("GRAFANA_URL_TEMPLATE"))
 
+    tracing_url_template = providers.Object(os.getenv("TRACING_URL_TEMPLATE"))
+
     sentry_resource_header = providers.Factory(get_sentry_header, request.headers)

@@ -91,7 +91,19 @@ def test_build_issue_resolved_message_from_example() -> None:
 async def test_build_issue_unresolved_message_from_example() -> None:
     """Test building a message from an example issue unresolved JSON file."""
     # There is no message for issue_created event, just to check schema
-    async with await open_file(MOCKS_DIR / "real" / "issue_unresolved.json") as fp:
+    async with await open_file(MOCKS_DIR / "issue_unresolved.json") as fp:
         data = await fp.read()
         msg = msgspec.json.decode(data, type=IssueUnresolvedWebhookBody)
     build_issue_unresolved_message(msg)
+
+
+async def test_actual_send() -> None:
+    """Test actual message rendering from a real alert event payload.
+
+    Verifies that the Trace button renders correctly with proper trace ID extraction
+    and breadcrumb handling.
+    """
+    async with await open_file(MOCKS_DIR / "real" / "alert_triggered.json") as fp:
+        data = await fp.read()
+        msg = msgspec.json.decode(data, type=AlertEventWebhookBody)
+    assert "c5cfb16c767be1f601fa6ddbf566d544" in build_alert_event_message(msg).render()
