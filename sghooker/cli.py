@@ -48,29 +48,32 @@ def _validate_config(config: dict[str, str | None]) -> None:
 def _load_json_file(file_path: Path) -> dict[str, Any]:
     """Load and parse JSON file."""
     try:
-        with open(file_path, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
+        with file_path.open("r") as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                typer.echo(f"Error: JSON file must contain an object at the root: {file_path}", err=True)
+                raise typer.Exit(code=1) from None
+            return data
+    except FileNotFoundError as e:
         typer.echo(f"Error: File not found: {file_path}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
     except json.JSONDecodeError as e:
         typer.echo(f"Error: Invalid JSON in file {file_path}: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 def _detect_event_type(data: dict[str, Any]) -> str:
     """Detect the event type from the JSON data."""
     # Check for alert event
-    if "event" in data and "title" in data.get("event", {}):
-        if "alert_rule" in data:
-            return "alert_event"
+    if "event" in data and "title" in data.get("event", {}) and "alert_rule" in data:
+        return "alert_event"
 
     # Check for issue events
     if "data" in data:
         action = data.get("action", "").lower()
         if action == "created":
             return "issue_created"
-        elif action == "unresolved":
+        if action == "unresolved":
             return "issue_unresolved"
 
     # Default to alert event if we can't detect
@@ -83,16 +86,15 @@ def _parse_event_data(event_type: str, data: dict[str, Any]) -> msgspec.Struct:
     try:
         if event_type == "alert_event":
             return msgspec.convert(data, type=AlertEventWebhookBody)
-        elif event_type == "issue_created":
+        if event_type == "issue_created":
             return msgspec.convert(data, type=IssueCreatedWebhookBody)
-        elif event_type == "issue_unresolved":
+        if event_type == "issue_unresolved":
             return msgspec.convert(data, type=IssueUnresolvedWebhookBody)
-        else:
-            typer.echo(f"Error: Unknown event type: {event_type}", err=True)
-            raise typer.Exit(code=1)
+        typer.echo(f"Error: Unknown event type: {event_type}", err=True)
+        raise typer.Exit(code=1) from None
     except msgspec.ValidationError as e:
         typer.echo(f"Error: JSON validation failed: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 async def _send_message_async(
@@ -105,14 +107,14 @@ async def _send_message_async(
     # Build message based on event type
     if event_type == "alert_event":
         message = build_alert_event_message(
-            event_data,  # type: ignore[arg-type]
+            msgspec.convert(event_data, type=AlertEventWebhookBody),
             grafana_url_template=grafana_url_template,
             tracing_url_template=tracing_url_template,
         )
     elif event_type == "issue_created":
-        message = build_issue_created_message(event_data)  # type: ignore[arg-type]
+        message = build_issue_created_message(msgspec.convert(event_data, type=IssueCreatedWebhookBody))
     elif event_type == "issue_unresolved":
-        message = build_issue_unresolved_message(event_data)  # type: ignore[arg-type]
+        message = build_issue_unresolved_message(msgspec.convert(event_data, type=IssueUnresolvedWebhookBody))
     else:
         typer.echo(f"Error: Unknown event type: {event_type}", err=True)
         raise typer.Exit(code=1)
@@ -121,7 +123,6 @@ async def _send_message_async(
     await send_message(dict(message.render()))
 
 
-@app.command(name="send-test-message")
 def send_test_message(
     file_path: Annotated[
         Path,
@@ -151,6 +152,7 @@ def send_test_message(
         export WEBHOOK_URL="https://chat.googleapis.com/v1/spaces/..."
         sghooker send-test-message payload.json
         sghooker send-test-message payload.json --event-type alert_event
+
     """
     # Load and validate configuration
     config = _load_env_config()
@@ -182,7 +184,6 @@ def send_test_message(
     typer.echo("Message sent successfully!")
 
 
-@app.command(name="validate")
 def validate_payload(
     file_path: Annotated[
         Path,
@@ -210,6 +211,7 @@ def validate_payload(
     Examples:
         sghooker validate payload.json
         sghooker validate payload.json --event-type issue_created
+
     """
     # Load JSON file
     typer.echo(f"Loading JSON file: {file_path}")
