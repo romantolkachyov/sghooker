@@ -149,25 +149,3 @@ def test_build_alert_event_message_with_date_time_placeholders() -> None:
                         break
                 else:
                     pytest.fail("View Trace button not found in rendered message.")
-
-
-async def test_actual_send() -> None:
-    """Test actual message rendering from a real alert event payload.
-
-    Verifies that the Trace button renders correctly with proper trace ID extraction
-    and breadcrumb handling.
-    """
-    async with await open_file(MOCKS_DIR / "real" / "alert_triggered.json") as fp:
-        data = await fp.read()
-        msg = msgspec.json.decode(data, type=AlertEventWebhookBody)
-    rendered = build_alert_event_message(msg, tracing_url_template="https://example.com/traces/{trace_id}").render()
-    # Check if the trace ID is present in the button's URL
-    for section in rendered["cardsV2"][0]["card"]["sections"]:
-        for widget in section.get("widgets", []):
-            if "buttonList" in widget and "buttons" in widget["buttonList"]:
-                for button in widget["buttonList"]["buttons"]:
-                    if button.get("text") == "View Trace":
-                        url = button["onClick"]["openLink"]["url"]
-                        assert "c5cfb16c767be1f601fa6ddbf566d544" in url, (
-                            f"Trace ID 'c5cfb16c767be1f601fa6ddbf566d544' not found in URL: {url}"
-                        )

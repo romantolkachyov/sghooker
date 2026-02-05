@@ -60,6 +60,7 @@ class TestSendTestMessageCommand:
     def test_send_alert_event_success(
         self,
         mock_send_message: AsyncMock,
+        mock_env_webhook_url: None,  # noqa: ARG002,RUF100
     ) -> None:
         """Test sending an alert event message successfully."""
         # Arrange
@@ -84,6 +85,7 @@ class TestSendTestMessageCommand:
     def test_send_issue_created_success(
         self,
         mock_send_message: AsyncMock,
+        mock_env_webhook_url: None,  # noqa: ARG002,RUF100
     ) -> None:
         """Test sending an issue created message successfully."""
         # Arrange
@@ -106,6 +108,7 @@ class TestSendTestMessageCommand:
     def test_send_issue_unresolved_success(
         self,
         mock_send_message: AsyncMock,
+        mock_env_webhook_url: None,  # noqa: ARG002,RUF100
     ) -> None:
         """Test sending an issue unresolved message successfully."""
         # Arrange
@@ -151,6 +154,7 @@ class TestSendTestMessageCommand:
     def test_invalid_json_file(
         self,
         mock_send_message: AsyncMock,
+        mock_env_webhook_url: None,  # noqa: ARG002,RUF100
     ) -> None:
         """Test handling of invalid JSON file."""
         # Arrange
@@ -184,6 +188,7 @@ class TestSendTestMessageCommand:
 
     def test_explicit_event_type_override(
         self,
+        mock_env_webhook_url: None,  # noqa: ARG002,RUF100
     ) -> None:
         """Test that explicit event type override works."""
         # Arrange - create data that would auto-detect as alert_event

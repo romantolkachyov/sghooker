@@ -123,6 +123,7 @@ async def _send_message_async(
     await send_message(dict(message.render()))
 
 
+@app.command(name="send-test-message")
 def send_test_message(
     file_path: Annotated[
         Path,
@@ -184,6 +185,7 @@ def send_test_message(
     typer.echo("Message sent successfully!")
 
 
+@app.command(name="validate")
 def validate_payload(
     file_path: Annotated[
         Path,
