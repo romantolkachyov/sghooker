@@ -42,4 +42,4 @@ repos:
     hooks:
       - id: mypy
         args: [ --strict ]
-        additional_dependencies: [ pulya, pytest, polyfactory ]
+        additional_dependencies: [ pulya, pytest, polyfactory, pytest-httpserver, typer ]
