@@ -1,8 +1,10 @@
 """Tests for chat message builders."""
 
 from pathlib import Path
+from typing import Any
 
 import msgspec.json
+import pytest
 from anyio import open_file
 from polyfactory.factories.msgspec_factory import MsgspecFactory
 
@@ -62,9 +64,9 @@ def test_build_alert_event_message_with_grafana_url() -> None:
         "{service_name}",
         "my-svc",
     )
-    if logs_button["onClick"]["openLink"]["url"] != expected_url:
-        error_msg = f"Expected URL {expected_url}, got {logs_button['onClick']['openLink']['url']}"
-        raise AssertionError(error_msg)
+    assert logs_button["onClick"]["openLink"]["url"] == expected_url, (
+        f"Expected URL {expected_url}, got {logs_button['onClick']['openLink']['url']}"
+    )
 
 
 def test_build_issue_created_message() -> None:
@@ -97,6 +99,58 @@ async def test_build_issue_unresolved_message_from_example() -> None:
     build_issue_unresolved_message(msg)
 
 
+def test_build_alert_event_message_with_date_time_placeholders() -> None:
+    """Test building a message with date/time placeholders in the URL template."""
+    # Mock data for testing (simulating alert_triggered.json content)
+    mock_data: dict[str, Any] = {
+        "data": {
+            "event": {
+                "message": "Test alert message",
+                "culprit": "test-culprit",
+                "issue_url": "https://example.com/issues/123",
+                "web_url": "https://example.com/web/123",
+                "level": "error",
+                "title": "Test Alert Title",
+                "timestamp": 1566248777.677,  # Unix timestamp with milliseconds
+                "tags": [("namespace", "my-ns"), ("service_name", "my-svc")],
+                "extra": {"otelTraceID": "c5cfb16c767be1f601fa6ddbf566d544"},
+            },
+            "triggered_rule": "test-rule",
+        },
+    }
+    msg = msgspec.json.decode(msgspec.json.encode(mock_data), type=AlertEventWebhookBody)
+
+    # Define the URL template with placeholders
+    tracing_url_template = "https://example.com/traces/{trace_id}?start={start}&end={end}"
+
+    # Call the builder function with the template
+    result = build_alert_event_message(msg, tracing_url_template=tracing_url_template)
+    rendered = result.render()
+
+    # Calculate expected time range (10 minutes before and after the event timestamp)
+    event_time_ms = int(mock_data["data"]["event"]["timestamp"] * 1000)
+    from_ = event_time_ms - (10 * 60 * 1000)  # 10 minutes in milliseconds
+    to_ms = event_time_ms + (10 * 60 * 1000)
+
+    # Extract the trace ID from the mock data
+    trace_id = mock_data["data"]["event"]["extra"]["otelTraceID"]
+
+    # Construct the expected URL
+    expected_url = tracing_url_template.format(trace_id=trace_id, start=from_, end=to_ms)
+
+    # Verify the rendered URL in the message
+    for section in rendered["cardsV2"][0]["card"]["sections"]:
+        for widget in section.get("widgets", []):
+            if "buttonList" in widget and "buttons" in widget["buttonList"]:
+                for button in widget["buttonList"]["buttons"]:
+                    if button.get("text") == "View Trace":
+                        url = button["onClick"]["openLink"]["url"]
+                        assert url == expected_url, f"Expected URL {expected_url}, got {url}"
+                        break
+                else:
+                    pytest.fail("View Trace button not found in rendered message.")
+
+
 async def test_actual_send() -> None:
     """Test actual message rendering from a real alert event payload.
 
@@ -106,4 +160,14 @@ async def test_actual_send() -> None:
     async with await open_file(MOCKS_DIR / "real" / "alert_triggered.json") as fp:
         data = await fp.read()
         msg = msgspec.json.decode(data, type=AlertEventWebhookBody)
-    assert "c5cfb16c767be1f601fa6ddbf566d544" in build_alert_event_message(msg).render()
+    rendered = build_alert_event_message(msg, tracing_url_template="https://example.com/traces/{trace_id}").render()
+    # Check if the trace ID is present in the button's URL
+    for section in rendered["cardsV2"][0]["card"]["sections"]:
+        for widget in section.get("widgets", []):
+            if "buttonList" in widget and "buttons" in widget["buttonList"]:
+                for button in widget["buttonList"]["buttons"]:
+                    if button.get("text") == "View Trace":
+                        url = button["onClick"]["openLink"]["url"]
+                        assert "c5cfb16c767be1f601fa6ddbf566d544" in url, (
+                            f"Trace ID 'c5cfb16c767be1f601fa6ddbf566d544' not found in URL: {url}"
+                        )

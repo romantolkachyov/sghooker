@@ -164,9 +164,11 @@ def build_alert_event_message(
     namespace = _get_tag_value(event.tags, "namespace")
     service_name = _get_tag_value(event.tags, "service_name")
 
-    # Extract trace_id from breadcrumbs or fallback to tags
+    # Extract trace_id from extra, then breadcrumbs, or fallback to tags
     trace_id = None
-    if event.breadcrumbs and event.breadcrumbs.values:
+    if event.extra and event.extra.otel_trace_id:
+        trace_id = event.extra.otel_trace_id
+    elif event.breadcrumbs and event.breadcrumbs.values:
         for breadcrumb in event.breadcrumbs.values:
             if breadcrumb.data and breadcrumb.data.otel_trace_id:
                 trace_id = breadcrumb.data.otel_trace_id
@@ -188,6 +190,14 @@ def build_alert_event_message(
             .replace("{namespace}", namespace or "")
             .replace("{service_name}", service_name or "")
         )
+
+        # Add date/time placeholders if event timestamp exists
+        if event.timestamp:
+            event_ms: int = int(event.timestamp * 1000)
+            ten_minutes_ms: int = 10 * 60 * 1000
+            from_ms: int = event_ms - ten_minutes_ms
+            to_ms: int = event_ms + ten_minutes_ms
+            trace_url = trace_url.replace("{start}", str(from_ms)).replace("{end}", str(to_ms))
 
     card = CardWithId(
         header=CardHeader(

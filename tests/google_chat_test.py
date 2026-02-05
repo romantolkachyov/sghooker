@@ -47,12 +47,10 @@ async def test_send_message_non_200_response(
     with caplog.at_level("ERROR"):
         await google_chat.send_message(message_data)
 
-    if len(caplog.records) != 1:
-        error_msg = f"Expected 1 log record, got {len(caplog.records)}"
-        raise AssertionError(error_msg)
-    if "Failed to send message to google chat" not in caplog.records[0].message:
-        error_msg = f"Unexpected log message: {caplog.records[0].message}"
-        raise AssertionError(error_msg)
+    assert len(caplog.records) == 1, f"Expected 1 log record, got {len(caplog.records)}"
+    assert "Failed to send message to google chat" in caplog.records[0].message, (
+        f"Unexpected log message: {caplog.records[0].message}"
+    )
 
 
 async def test_send_message_no_webhook_url(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -83,6 +83,12 @@ class Meta(msgspec.Struct):
     breadcrumbs: MetaBreadcrumbs | None = None
 
 
+class Extra(msgspec.Struct):
+    """Additional data for the alert event, including OpenTelemetry trace ID."""
+
+    otel_trace_id: str | None = msgspec.field(name="otelTraceID", default=None)
+
+
 class AlertEvent(msgspec.Struct):
     """An alert event from Sentry."""
 
@@ -99,6 +105,9 @@ class AlertEvent(msgspec.Struct):
     contexts: Contexts | None = None
     breadcrumbs: Breadcrumbs | None = None
     _meta: Meta | None = None
+    extra: Extra | None = None
+    timestamp: float | None = None  # Unix timestamp with milliseconds
+    datetime: str | None = None  # ISO 8601 format like "2019-08-19T21:06:17.677000Z"
 
 
 class AlertEventData(msgspec.Struct):

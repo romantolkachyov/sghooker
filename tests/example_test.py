@@ -41,12 +41,8 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
 async def test_example(client: TestClient) -> None:
     """Test basic app endpoint."""
     r = await client.get("/")
-    if r.status_code != HTTPStatus.OK:
-        error_msg = f"Expected status {HTTPStatus.OK}, got {r.status_code}"
-        raise AssertionError(error_msg)
-    if r.text != '{"app":"sghooker"}':
-        error_msg = f"Unexpected response: {r.text}"
-        raise AssertionError(error_msg)
+    assert r.status_code == HTTPStatus.OK, f"Expected status {HTTPStatus.OK}, got {r.status_code}"
+    assert r.text == '{"app":"sghooker"}', f"Unexpected response: {r.text}"
 
 
 @patch("sghooker.main.send_message", AsyncMock(status_code=200))
@@ -55,6 +51,4 @@ async def test_alert_event_webhook(client: TestClient) -> None:
     async with await open_file(MOCKS_DIR / "alert_triggered.json") as fp:
         data = await fp.read()
     r = await client.post("/inbox/sentry/", content=data)
-    if r.status_code != HTTPStatus.OK:
-        error_msg = f"Expected status {HTTPStatus.OK}, got {r.status_code}"
-        raise AssertionError(error_msg)
+    assert r.status_code == HTTPStatus.OK, f"Expected status {HTTPStatus.OK}, got {r.status_code}"
