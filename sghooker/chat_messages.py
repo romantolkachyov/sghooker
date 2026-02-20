@@ -161,7 +161,7 @@ def build_alert_event_message(
 
     """
     event = webhook.data.event
-    namespace = _get_tag_value(event.tags, "namespace")
+    namespace = _get_tag_value(event.tags, "namespace") or _get_tag_value(event.tags, "environment")
     service_name = _get_tag_value(event.tags, "service_name")
 
     # Extract trace_id from extra, then breadcrumbs, or fallback to tags
