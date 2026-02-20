@@ -17,7 +17,7 @@ class IssueData(msgspec.Struct):
     permalink: str
     title: str
     culprit: str
-    logger: str
+    logger: str | None
     level: str
     # examples: unresolved, ...
     status: str
