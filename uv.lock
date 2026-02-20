@@ -742,7 +742,7 @@ wheels = [
 
 [[package]]
 name = "sghooker"
-version = "0.2.4"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "granian" },
