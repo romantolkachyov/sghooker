@@ -48,8 +48,11 @@ class BaseIssueWebhookBody(msgspec.Struct):
     data: IssueWebhookData
 
 
-class IssueCreatedWebhookBody(BaseIssueWebhookBody, tag="created", tag_field="action"):
-    """Sentry issue created webhook body."""
+class IssueCreatedWebhookBody(BaseIssueWebhookBody):
+    """Sentry issue created webhook body.
+
+    Untagged: ``action`` is also ``created`` for ``error.created`` webhooks.
+    """
 
 
 class IssueResolvedWebhookBody(

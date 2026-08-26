@@ -12,11 +12,13 @@ import typer
 
 from sghooker.chat_messages import (
     build_alert_event_message,
+    build_error_created_message,
     build_issue_created_message,
     build_issue_unresolved_message,
 )
 from sghooker.google_chat import send_message
 from sghooker.schemas.alert_event import AlertEventWebhookBody
+from sghooker.schemas.error_event import ErrorCreatedWebhookBody
 from sghooker.schemas.issue_event import IssueCreatedWebhookBody, IssueUnresolvedWebhookBody
 
 # Configure logging
@@ -71,6 +73,8 @@ def _detect_event_type(data: dict[str, Any]) -> str:
     # Check for issue events
     if "data" in data:
         action = data.get("action", "").lower()
+        if "error" in data["data"]:
+            return "error_created"
         if action == "created":
             return "issue_created"
         if action == "unresolved":
@@ -86,6 +90,8 @@ def _parse_event_data(event_type: str, data: dict[str, Any]) -> msgspec.Struct:
     try:
         if event_type == "alert_event":
             return msgspec.convert(data, type=AlertEventWebhookBody)
+        if event_type == "error_created":
+            return msgspec.convert(data, type=ErrorCreatedWebhookBody)
         if event_type == "issue_created":
             return msgspec.convert(data, type=IssueCreatedWebhookBody)
         if event_type == "issue_unresolved":
@@ -108,6 +114,12 @@ async def _send_message_async(
     if event_type == "alert_event":
         message = build_alert_event_message(
             msgspec.convert(event_data, type=AlertEventWebhookBody),
+            grafana_url_template=grafana_url_template,
+            tracing_url_template=tracing_url_template,
+        )
+    elif event_type == "error_created":
+        message = build_error_created_message(
+            msgspec.convert(event_data, type=ErrorCreatedWebhookBody),
             grafana_url_template=grafana_url_template,
             tracing_url_template=tracing_url_template,
         )
@@ -139,7 +151,10 @@ def send_test_message(
         typer.Option(
             "--event-type",
             "-t",
-            help="Event type (alert_event, issue_created, issue_unresolved). Auto-detected if not specified.",
+            help=(
+                "Event type (alert_event, error_created, issue_created, issue_unresolved). "
+                "Auto-detected if not specified."
+            ),
         ),
     ] = None,
 ) -> None:
@@ -201,7 +216,10 @@ def validate_payload(
         typer.Option(
             "--event-type",
             "-t",
-            help="Event type (alert_event, issue_created, issue_unresolved). Auto-detected if not specified.",
+            help=(
+                "Event type (alert_event, error_created, issue_created, issue_unresolved). "
+                "Auto-detected if not specified."
+            ),
         ),
     ] = None,
 ) -> None:
