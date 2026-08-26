@@ -23,7 +23,7 @@ class ExceptionData(msgspec.Struct):
 
     type: str
     value: str
-    stacktrace: StacktraceInfo
+    stacktrace: StacktraceInfo | None = None
 
 
 class EventException(msgspec.Struct):

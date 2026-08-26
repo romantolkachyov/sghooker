@@ -276,6 +276,14 @@ class TestEventTypeDetection:
 
         assert result == "alert_event"
 
+    def test_detect_error_created(self) -> None:
+        """Test auto-detection of error.created event type."""
+        data = {"action": "created", "data": {"error": {"title": "RuntimeError"}}}
+
+        result = _detect_event_type(data)
+
+        assert result == "error_created"
+
     def test_detect_issue_created(self) -> None:
         """Test auto-detection of issue created event type."""
         data = {"action": "created", "data": {"issue": {"id": "123"}}}

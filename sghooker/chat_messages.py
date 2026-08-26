@@ -24,9 +24,11 @@ from sghooker.schemas.alert_event import (
     ExceptionData,
     StacktraceInfo,
 )
+from sghooker.schemas.error_event import ErrorCreatedWebhookBody, ErrorData
 from sghooker.schemas.issue_event import (
     IssueCreatedWebhookBody,
     IssueData,
+    IssueResolvedWebhookBody,
     IssueUnresolvedWebhookBody,
 )
 
@@ -83,12 +85,14 @@ def _exception_to_widgets(exception: ExceptionData) -> list[Widget]:
         A list of widgets representing the exception.
 
     """
-    return [
+    widgets: list[Widget] = [
         TextParagraph(
             text=f"<b>{exception.type}</b><br>{exception.value}",
         ),
-        *_format_stack(exception.stacktrace),
     ]
+    if exception.stacktrace is not None:
+        widgets.extend(_format_stack(exception.stacktrace))
+    return widgets
 
 
 def _issue_buttons(
@@ -113,7 +117,7 @@ def _issue_buttons(
     """
     buttons = [
         Button(
-            text="Open sentry.io",
+            text="Open Sentry",
             on_click=OnClick(open_link=OpenLink(url=issue_url)),
         ),
     ]
@@ -281,6 +285,144 @@ def _issue_sections(issue: IssueData) -> list[Section]:
             widgets=[ButtonList(buttons=_issue_buttons(issue_url=issue.permalink))],
         ),
     ]
+
+
+def _error_trace_and_logs(
+    error: ErrorData,
+    grafana_url_template: str | None,
+    tracing_url_template: str | None,
+) -> tuple[str | None, str | None, str | None, str | None, str | None, str | None]:
+    """Resolve namespace, service, logs, trace URLs and subtitle parts from an error event."""
+    namespace = _get_tag_value(error.tags, "namespace") or _get_tag_value(error.tags, "environment")
+    service_name = _get_tag_value(error.tags, "service_name")
+    environment = error.environment or _get_tag_value(error.tags, "environment")
+    release = error.release or _get_tag_value(error.tags, "release")
+
+    trace_id = None
+    if error.extra and error.extra.otel_trace_id:
+        trace_id = error.extra.otel_trace_id
+    elif error.breadcrumbs and error.breadcrumbs.values:
+        for breadcrumb in error.breadcrumbs.values:
+            if breadcrumb.data and breadcrumb.data.otel_trace_id:
+                trace_id = breadcrumb.data.otel_trace_id
+                break
+    if not trace_id:
+        trace_id = _get_tag_value(error.tags, "otelTraceID")
+
+    logs_url = None
+    if grafana_url_template and namespace and service_name:
+        logs_url = grafana_url_template.replace("{namespace}", namespace).replace(
+            "{service_name}",
+            service_name,
+        )
+
+    trace_url = None
+    if tracing_url_template and trace_id:
+        trace_url = (
+            tracing_url_template.replace("{trace_id}", trace_id)
+            .replace("{namespace}", namespace or "")
+            .replace("{service_name}", service_name or "")
+        )
+        if error.timestamp:
+            event_ms = int(error.timestamp * 1000)
+            ten_minutes_ms = 10 * 60 * 1000
+            trace_url = trace_url.replace("{start}", str(event_ms - ten_minutes_ms)).replace(
+                "{end}",
+                str(event_ms + ten_minutes_ms),
+            )
+
+    return namespace, service_name, logs_url, trace_url, environment, release
+
+
+def build_error_created_message(
+    webhook: ErrorCreatedWebhookBody,
+    grafana_url_template: str | None = None,
+    tracing_url_template: str | None = None,
+) -> Message:
+    """Build a Google Chat message from an error.created webhook."""
+    error = webhook.data.error
+    namespace, service_name, logs_url, trace_url, environment, release = _error_trace_and_logs(
+        error,
+        grafana_url_template,
+        tracing_url_template,
+    )
+    subtitle_parts = [part for part in (release, environment) if part]
+    subtitle = "&nbsp;—&nbsp;".join(subtitle_parts) if subtitle_parts else error.level
+
+    card = CardWithId(
+        header=CardHeader(
+            title=error.title,
+            subtitle=subtitle,
+            image_url="https://romantolkachyov.github.io/sentry.png",
+            image_type=ImageType.CIRCLE,
+        ),
+        sections=[
+            Section(
+                widgets=[
+                    TextParagraph(text=f"<b>culprit:</b> {error.culprit}"),
+                    *([TextParagraph(text=error.message, max_lines=4)] if error.message else []),
+                ],
+            ),
+            *(
+                [
+                    Section(
+                        collapsible=True,
+                        uncollapsible_widgets_count=1,
+                        widgets=_exception_to_widgets(exception),
+                    )
+                    for exception in error.exception.values
+                ]
+                if error.exception
+                else []
+            ),
+            *(
+                [
+                    Section(
+                        widgets=[
+                            ChipList(
+                                layout=ChipList.Layout.HORIZONTAL_SCROLLABLE,
+                                chips=[Chip(label=f"{tag[0]} | {tag[1]}", disabled=True) for tag in error.tags],
+                            ),
+                        ],
+                    ),
+                ]
+                if error.tags
+                else []
+            ),
+            Section(
+                widgets=[
+                    ButtonList(
+                        buttons=_issue_buttons(
+                            issue_url=error.web_url,
+                            namespace=namespace,
+                            service_name=service_name,
+                            trace_url=trace_url,
+                            logs_url=logs_url,
+                        ),
+                    ),
+                ],
+            ),
+        ],
+    )
+    return Message(cards_v2=[card])
+
+
+def build_issue_resolved_message(webhook: IssueResolvedWebhookBody) -> Message:
+    """Build a Google Chat message from an issue resolved webhook."""
+    issue = webhook.data.issue
+    return Message(
+        cards_v2=[
+            CardWithId(
+                header=CardHeader(
+                    title="Issue resolved",
+                    subtitle=f"Project: {issue.project.name}",
+                    image_url="https://romantolkachyov.github.io/sentry.png",
+                    image_type=ImageType.CIRCLE,
+                ),
+                sections=_issue_sections(issue),
+            ),
+        ],
+    )
 
 
 def build_issue_created_message(webhook: IssueCreatedWebhookBody) -> Message:

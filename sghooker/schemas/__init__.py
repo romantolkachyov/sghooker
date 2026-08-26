@@ -9,6 +9,7 @@ from sghooker.schemas.alert_event import (
     FrameInfo,
     StacktraceInfo,
 )
+from sghooker.schemas.error_event import ErrorCreatedWebhookBody, ErrorData, ErrorWebhookData
 from sghooker.schemas.issue_event import (
     BaseIssueWebhookBody,
     IssueCreatedWebhookBody,
@@ -24,6 +25,9 @@ __all__ = [
     "AlertEventData",
     "AlertEventWebhookBody",
     "BaseIssueWebhookBody",
+    "ErrorCreatedWebhookBody",
+    "ErrorData",
+    "ErrorWebhookData",
     "EventException",
     "ExceptionData",
     "FrameInfo",

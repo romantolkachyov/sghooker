@@ -10,10 +10,13 @@ from polyfactory.factories.msgspec_factory import MsgspecFactory
 
 from sghooker.chat_messages import (
     build_alert_event_message,
+    build_error_created_message,
     build_issue_created_message,
+    build_issue_resolved_message,
     build_issue_unresolved_message,
 )
 from sghooker.schemas.alert_event import AlertEventWebhookBody
+from sghooker.schemas.error_event import ErrorCreatedWebhookBody
 from sghooker.schemas.issue_event import (
     IssueCreatedWebhookBody,
     IssueResolvedWebhookBody,
@@ -83,9 +86,24 @@ def test_build_issue_created_message_from_example() -> None:
     _ = result.render()
 
 
+def test_build_error_created_message_from_example() -> None:
+    """Test building a message from an example error.created JSON file."""
+    with Path.open(MOCKS_DIR / "error_created.json") as fp:
+        msg = msgspec.json.decode(fp.read(), type=ErrorCreatedWebhookBody)
+    result = build_error_created_message(msg)
+    _ = result.render()
+
+
 def test_build_issue_resolved_message_from_example() -> None:
+    """Test building a message from an example issue resolved JSON file."""
+    with Path.open(MOCKS_DIR / "issue_resolved.json") as fp:
+        msg = msgspec.json.decode(fp.read(), type=IssueResolvedWebhookBody)
+    result = build_issue_resolved_message(msg)
+    _ = result.render()
+
+
+def test_build_issue_resolved_message_schema_only() -> None:
     """Test parsing an issue resolved webhook (schema validation only)."""
-    # There is no message for issue_created event, just to check schema
     with Path.open(MOCKS_DIR / "issue_resolved.json") as fp:
         msgspec.json.decode(fp.read(), type=IssueResolvedWebhookBody)
 
